@@ -39,12 +39,12 @@ UINT mVector4fCount;
 //D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
-//IDirect3DVertexShader9* vShader;
-//UINT vSize;
+IDirect3DVertexShader9* vShader;
+UINT vSize;
 
 //pixelshader
-//IDirect3DPixelShader9* pShader;
-//UINT pSize;
+IDirect3DPixelShader9* pShader;
+UINT pSize;
 
 //texture
 //D3DLOCKED_RECT pLockedRect;
@@ -697,7 +697,7 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 //=====================================================================================================================
 
 // menu part
-char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Chams]" };
+char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Chams]", "[On + Glow]" };
 char *opt_Teams[] = { "[OFF]", "[Heads]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
@@ -734,7 +734,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 
 		Current = 1;
 		//Category(pDevice, " [D3D]");
-		AddItem(pDevice, " Wallhack", wallhack, opt_OnOff, 2);
+		AddItem(pDevice, " Wallhack", wallhack, opt_OnOff, 3);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 2);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
 		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 8);
@@ -754,189 +754,3 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 }
 
 //=====================================================================================================================
-
-HRESULT GenerateTexture(LPDIRECT3DDEVICE9 Device, IDirect3DTexture9 **ppD3Dtex, DWORD colour32)
-{
-	if (FAILED(Device->CreateTexture(8, 8, 1, 0, D3DFMT_A4R4G4B4, D3DPOOL_MANAGED, ppD3Dtex, NULL)))
-		return E_FAIL;
-
-	WORD colour16 = ((WORD)((colour32 >> 28) & 0xF) << 12)
-		| (WORD)(((colour32 >> 20) & 0xF) << 8)
-		| (WORD)(((colour32 >> 12) & 0xF) << 4)
-		| (WORD)(((colour32 >> 4) & 0xF) << 0);
-
-	D3DLOCKED_RECT d3dlr;
-	(*ppD3Dtex)->LockRect(0, &d3dlr, 0, 0);
-	WORD *pDst16 = (WORD*)d3dlr.pBits;
-
-	for (int xy = 0; xy < 8 * 8; xy++)
-		*pDst16++ = colour16;
-
-	(*ppD3Dtex)->UnlockRect(0);
-
-	return S_OK;
-}
-
-//=====================================================================================================================
-
-// ===== Platform includes =====
-#include <tlhelp32.h>
-#include <Psapi.h>
-bool EnumerateThreadIDs(std::vector< DWORD >& thread_ids)
-{
-	// 
-	thread_ids.clear();
-
-	// Take a snapshot of all running threads  
-	HANDLE thread_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, GetCurrentProcessId());
-	if (thread_snapshot == INVALID_HANDLE_VALUE)
-		return false;
-
-	// Fill in the size of the structure before using it. 
-	THREADENTRY32 thread_entry;
-	thread_entry.dwSize = sizeof(thread_entry);
-
-	// Retrieve information about the first thread,
-	// and exit if unsuccessful
-	if (Thread32First(thread_snapshot, &thread_entry))
-	{
-		//
-		do
-		{
-			thread_ids.push_back(thread_entry.th32ThreadID);
-		} while (Thread32Next(thread_snapshot, &thread_entry));
-	}
-
-	// 
-	if (!CloseHandle(thread_snapshot))
-		return false;
-
-	// 
-	return true;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetThreadEntryPoint(DWORD thread_id)
-{
-	// 
-	DWORD address_NtQueryInformationThread = (DWORD)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
-	if (address_NtQueryInformationThread == 0)
-		return 0;
-
-	// 
-	HANDLE thread_handle = OpenThread(THREAD_QUERY_INFORMATION, FALSE, thread_id);
-	if (thread_handle == nullptr)
-		return 0;
-
-	//
-	DWORD start_address = 0;
-
-
-	// 
-	long result = ((long(__stdcall *)(HANDLE, long, void*, DWORD, DWORD*))address_NtQueryInformationThread)(thread_handle, 9, &start_address, sizeof(start_address), nullptr);
-
-	// 
-	CloseHandle(thread_handle);
-
-	// 
-	if (result != 0)
-		return 0;
-
-	// 
-	return start_address;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetProcessEntryPoint()
-{
-	// 
-	MODULEINFO module_info;
-	if (!GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &module_info, sizeof(module_info)))
-		return 0;
-
-	return (DWORD)module_info.EntryPoint;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetMainThreadID()
-{
-	static DWORD main_thread_id = 0;
-	if (main_thread_id != 0)
-		return main_thread_id;
-
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return 0;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetProcessEntryPoint() == GetThreadEntryPoint(*it))
-		{
-			main_thread_id = *it;
-
-			return *it;
-		}
-	}
-
-	return 0;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-void SuspendMainThread()
-{
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetCurrentThreadId() == *it)
-			continue;
-
-		if (GetMainThreadID() != *it)
-			continue;
-
-		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
-		if (thread_handle == nullptr)
-			continue;
-
-		SuspendThread(thread_handle);
-
-		CloseHandle(thread_handle);
-	}
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-void ResumeMainThread()
-{
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetCurrentThreadId() == *it)
-			continue;
-
-		if (GetMainThreadID() != *it)
-			continue;
-
-		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
-		if (thread_handle == nullptr)
-			continue;
-
-		ResumeThread(thread_handle);
-
-		CloseHandle(thread_handle);
-	}
-}

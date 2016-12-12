@@ -1,10 +1,10 @@
 /*
-* Paladins D3D Hack Source V1.1beta by Nseven
+* Paladins D3D Hack Source V1.1 by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
 
-- open paladinsd3d.vcxproj (not paladinsd3d.vcxproj.filters) with Visual Studio 2015 (Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\WDExpress.exe)
+- open paladinsd3d.vcxproj (not wfdxhook.vcxproj.filters) with Visual Studio 2015 (Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\WDExpress.exe)
 - select x86(32bit) 
 - compile dll, press f7 or click the green triangle
 
@@ -64,21 +64,17 @@ typedef HRESULT(APIENTRY *SetViewport)(IDirect3DDevice9*, CONST D3DVIEWPORT9*);
 HRESULT APIENTRY SetViewport_hook(IDirect3DDevice9*, CONST D3DVIEWPORT9*);
 SetViewport SetViewport_orig = 0;
 
-//typedef HRESULT(APIENTRY *SetVertexShader)(IDirect3DDevice9*, IDirect3DVertexShader9*);
-//HRESULT APIENTRY SetVertexShader_hook(IDirect3DDevice9*, IDirect3DVertexShader9*);
-//SetVertexShader SetVertexShader_orig = 0;
+typedef HRESULT(APIENTRY *SetVertexShader)(IDirect3DDevice9*, IDirect3DVertexShader9*);
+HRESULT APIENTRY SetVertexShader_hook(IDirect3DDevice9*, IDirect3DVertexShader9*);
+SetVertexShader SetVertexShader_orig = 0;
 
-//typedef HRESULT(APIENTRY *SetPixelShader)(IDirect3DDevice9*, IDirect3DPixelShader9*);
-//HRESULT APIENTRY SetPixelShader_hook(IDirect3DDevice9*, IDirect3DPixelShader9*);
-//SetPixelShader SetPixelShader_orig = 0;
+typedef HRESULT(APIENTRY *SetPixelShader)(IDirect3DDevice9*, IDirect3DPixelShader9*);
+HRESULT APIENTRY SetPixelShader_hook(IDirect3DDevice9*, IDirect3DPixelShader9*);
+SetPixelShader SetPixelShader_orig = 0;
 
 //typedef HRESULT(APIENTRY *SetTexture)(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
 //HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
 //SetTexture SetTexture_orig = 0;
-
-//typedef HRESULT(APIENTRY *DrawPrimitive)(IDirect3DDevice9*, D3DPRIMITIVETYPE, UINT, UINT);
-//HRESULT APIENTRY DrawPrimitive_hook(IDirect3DDevice9*, D3DPRIMITIVETYPE, UINT, UINT);
-//DrawPrimitive DrawPrimitive_orig = 0;
 
 //==========================================================================================================================
 
@@ -136,22 +132,31 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	if (wallhack > 0 && decl->Type == 5 && numElements == 11) //models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-		if (wallhack == 2)
+
+		//chams
+		if (wallhack == 3)
 		{
 			float sRed[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 			pDevice->SetPixelShaderConstantF(0, sRed, 1);//0, 4, 8
-			//pDevice->SetTexture(countnum, texRed); //too much glow
 		}
+
+		//glow
+		if (wallhack == 2 && pSize == 136) //outline shader
+		{
+			pDevice->SetPixelShader(NULL);
+			return D3D_OK; //delete shader
+		}
+
 		DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-		if (wallhack == 2)
+
+		if (wallhack == 3)
 		{
 			float sGreen[4] = { 0.0f, 0.5f, 0.0f, 0.0f };
 			pDevice->SetPixelShaderConstantF(0, sGreen, 1);//0, 4, 8
-			//pDevice->SetTexture(countnum, texGreen);
 		}
+
 		pDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 	}
-
 
 	//hp bar
 	//Stride == 4 && NumVertices == 4 && primCount == 4 && vSize == 232 && pSize == 308 && decl->Type == 6 && numElements == 2 && mStartRegister == 6 && mVector4fCount == 2 && vdesc.Type == 6
@@ -168,6 +173,13 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//if((Stride == 4 && NumVertices == 4 && primCount == 4)
 		//return D3D_OK; 
 
+	//Stride == 36 && NumVertices == 11259 && primCount == 17369 && decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4
+	//if(vSize == 1216 && pSize == 164) //outline shader
+	
+	//test 
+	//D3DXMATRIX matScale;
+	//D3DXMatrixScaling(&matScale, 4.0f, 4.0f, 4.0f);
+	//pDevice->SetVertexShaderConstantF(231, (float *)&matScale, 4); //232 log weapons mode, 234, 236 big outline, 228wallhack4, 230wallhack4, 231 log outline mode4
 
 	//small bruteforce logger
 	if (logger)
@@ -179,14 +191,14 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 			countnum++;
 		if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
 			countnum = -1;
-		if (countnum == NumVertices)
+		if (countnum == pSize/10)
 			if ((Stride > 0) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
-				Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, mStartRegister, mVector4fCount);
-				//Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d && vdesc.Size == %d && vdesc.Type == %d", Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount, vdesc.Size, vdesc.Type);
-		if (countnum == NumVertices)
+				//Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, mStartRegister, mVector4fCount);
+				Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		if (countnum == pSize/10)
 		{
+			pDevice->SetPixelShader(NULL);
 			return D3D_OK; //delete texture
-			//pDevice->SetPixelShader(NULL);
 		}
 	}
 	
@@ -256,8 +268,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 				
 	//aimbot part 2
-	if (aimbot > 0 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
-	//if (aimbot > 0 && AimHPBarInfo.size() != NULL)
+	//if (aimbot > 0 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
+	if (aimbot > 0 && AimHPBarInfo.size() != NULL)
 	{
 		UINT BestTarget = -1;
 		DOUBLE fClosestPos = 99999;
@@ -278,7 +290,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			AimHPBarInfo[i].CrosshairDistance = GetDistance(AimHPBarInfo[i].vOutX, AimHPBarInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
 
 			//test w2s
-			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
+			DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
 
 			//aim at team 1 or 2 (not possible atm)
 			//if (aimbot == AimHPBarInfo[i].iTeam)
@@ -442,7 +454,7 @@ HRESULT APIENTRY SetViewport_hook(IDirect3DDevice9* pDevice, CONST D3DVIEWPORT9*
 
 HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters)
 {
-	DeleteRenderSurfaces();
+	//DeleteRenderSurfaces();
 
 	if (pFont)
 		pFont->OnLostDevice();
@@ -481,17 +493,27 @@ HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pP
 
 //==========================================================================================================================
 
-//HRESULT APIENTRY SetVertexShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DVertexShader9 *veShader)
-//{
-//return SetVertexShader_orig(pDevice, veShader);
-//}
+HRESULT APIENTRY SetVertexShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DVertexShader9 *veShader)
+{
+	if (veShader != NULL)
+	{
+		vShader = veShader;
+		vShader->GetFunction(NULL, &vSize);
+	}
+	return SetVertexShader_orig(pDevice, veShader);
+}
 
 //==========================================================================================================================
 
-//HRESULT APIENTRY SetPixelShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DPixelShader9 *piShader)
-//{
-//return SetPixelShader_orig(pDevice, piShader);
-//}
+HRESULT APIENTRY SetPixelShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DPixelShader9 *piShader)
+{
+	if (piShader != NULL)
+	{
+		pShader = piShader;
+		pShader->GetFunction(NULL, &pSize);
+	}
+	return SetPixelShader_orig(pDevice, piShader);
+}
 
 //==========================================================================================================================
 
@@ -502,14 +524,7 @@ HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pP
 
 //==========================================================================================================================
 
-//HRESULT APIENTRY DrawPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE PrimitiveType, UINT StartVertex, UINT PrimitiveCount)
-//{
-//return DrawPrimitive_orig(pDevice, PrimitiveType, StartVertex, PrimitiveCount);
-//}
-
-//==========================================================================================================================
-
-DWORD WINAPI DirectXInit(__in  LPVOID lpParameter)
+DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 {
 	//SuspendMainThread();
 
@@ -576,10 +591,9 @@ DWORD WINAPI DirectXInit(__in  LPVOID lpParameter)
 	Reset_orig = (Reset)dVtable[16];
 	CreateQuery_orig = (CreateQuery)dVtable[118];
 	SetViewport_orig = (SetViewport)dVtable[47];
-	//SetVertexShader_orig = (SetVertexShader)dVtable[92];
-	//SetPixelShader_orig = (SetPixelShader)dVtable[107];
+	SetVertexShader_orig = (SetVertexShader)dVtable[92];
+	SetPixelShader_orig = (SetPixelShader)dVtable[107];
 	//SetTexture_orig = (SetTexture)dVtable[65];
-	//DrawPrimitive_orig = (DrawPrimitive)dVtable[81];
 
 	// Detour functions x86 & x64
 	if (MH_Initialize() != MH_OK) { return 1; }
@@ -599,14 +613,12 @@ DWORD WINAPI DirectXInit(__in  LPVOID lpParameter)
 	if (MH_EnableHook((DWORD_PTR*)dVtable[118]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[47], &SetViewport_hook, reinterpret_cast<void**>(&SetViewport_orig)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dVtable[47]) != MH_OK) { return 1; }
-	//if (MH_CreateHook((DWORD_PTR*)dVtable[92], &SetVertexShader_hook, reinterpret_cast<void**>(&SetVertexShader_orig)) != MH_OK) { return 1; }
-	//if (MH_EnableHook((DWORD_PTR*)dVtable[92]) != MH_OK) { return 1; }
-	//if (MH_CreateHook((DWORD_PTR*)dVtable[107], &SetPixelShader_hook, reinterpret_cast<void**>(&SetPixelShader_orig)) != MH_OK) { return 1; }
-	//if (MH_EnableHook((DWORD_PTR*)dVtable[107]) != MH_OK) { return 1; }
+	if (MH_CreateHook((DWORD_PTR*)dVtable[92], &SetVertexShader_hook, reinterpret_cast<void**>(&SetVertexShader_orig)) != MH_OK) { return 1; }
+	if (MH_EnableHook((DWORD_PTR*)dVtable[92]) != MH_OK) { return 1; }
+	if (MH_CreateHook((DWORD_PTR*)dVtable[107], &SetPixelShader_hook, reinterpret_cast<void**>(&SetPixelShader_orig)) != MH_OK) { return 1; }
+	if (MH_EnableHook((DWORD_PTR*)dVtable[107]) != MH_OK) { return 1; }
 	//if (MH_CreateHook((DWORD_PTR*)dVtable[65], &SetTexture_hook, reinterpret_cast<void**>(&SetTexture_orig)) != MH_OK) { return 1; }
 	//if (MH_EnableHook((DWORD_PTR*)dVtable[65]) != MH_OK) { return 1; }
-	//if (MH_CreateHook((DWORD_PTR*)dVtable[81], &DrawPrimitive_hook, reinterpret_cast<void**>(&DrawPrimitive_orig)) != MH_OK) { return 1; }
-	//if (MH_EnableHook((DWORD_PTR*)dVtable[81]) != MH_OK) { return 1; }
 
 	//Log("[Detours] EndScene detour attached\n");
 
@@ -637,7 +649,8 @@ BOOL WINAPI DllMain(HMODULE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 				break;
 			}
 		}
-		CreateThread(0, 0, DirectXInit, 0, 0, 0); //init our hooks
+
+		CreateThread(0, 0, DXInit, 0, 0, 0); //init our hooks
 		break;
 
 	case DLL_PROCESS_DETACH: // A process unloads the DLL.
