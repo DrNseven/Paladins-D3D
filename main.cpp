@@ -268,8 +268,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 				
 	//aimbot part 2
-	//if (aimbot > 0 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
-	if (aimbot > 0 && AimHPBarInfo.size() != NULL)
+	if (aimbot > 0 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
+	//if (aimbot > 0 && AimHPBarInfo.size() != NULL)
 	{
 		UINT BestTarget = -1;
 		DOUBLE fClosestPos = 99999;
@@ -290,7 +290,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			AimHPBarInfo[i].CrosshairDistance = GetDistance(AimHPBarInfo[i].vOutX, AimHPBarInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
 
 			//test w2s
-			DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
+			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
 
 			//aim at team 1 or 2 (not possible atm)
 			//if (aimbot == AimHPBarInfo[i].iTeam)
