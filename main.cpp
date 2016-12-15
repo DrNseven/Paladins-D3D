@@ -1,10 +1,10 @@
 /*
-* Paladins D3D Hack Source V1.1 by Nseven
+* Paladins D3D Hack Source V1.1b by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
 
-- open paladinsd3d.vcxproj (not wfdxhook.vcxproj.filters) with Visual Studio 2015 (Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\WDExpress.exe)
+- open paladinsd3d.vcxproj (not paladinsd3d.vcxproj.filters) with Visual Studio 2015 (Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\WDExpress.exe)
 - select x86(32bit) 
 - compile dll, press f7 or click the green triangle
 
@@ -12,12 +12,6 @@ x86 compiled dll will be in paladinsd3d\Release folder
 
 If you share your dll with others, remove dependecy on vs runtime before compiling:
 - click: project -> properties -> configuration properties -> C/C++ -> code generation -> runtime library: Multi-threaded (/MT)
-
-How to use:
-- start fraps.exe (injector)
-- start paladins launcher
-- click play
-- dll will autoinject
 
 Menu key:
 - insert
@@ -72,9 +66,9 @@ typedef HRESULT(APIENTRY *SetPixelShader)(IDirect3DDevice9*, IDirect3DPixelShade
 HRESULT APIENTRY SetPixelShader_hook(IDirect3DDevice9*, IDirect3DPixelShader9*);
 SetPixelShader SetPixelShader_orig = 0;
 
-//typedef HRESULT(APIENTRY *SetTexture)(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
-//HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
-//SetTexture SetTexture_orig = 0;
+typedef HRESULT(APIENTRY *SetTexture)(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
+HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
+SetTexture SetTexture_orig = 0;
 
 //==========================================================================================================================
 
@@ -128,8 +122,21 @@ HRESULT APIENTRY SetVertexDeclaration_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DV
 
 HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE Type, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 {
+	//models
+	//decl->Type == 5 && numElements == 11 //models
+
+	//outline shader
+	//decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4 //outline shader
+
+	//glow
+	//decl->Type == 5 && numElements == 11 && vSize == 1036 && pSize == 136 && mStartRegister == 235 && mVector4fCount == 1 //glow
+
+	//hp bar
+	//Stride == 4 && NumVertices == 4 && primCount == 4 && vSize == 232 && pSize == 308 && decl->Type == 6 && numElements == 2 && mStartRegister == 6 && mVector4fCount == 2 && vdesc.Type == 6
+
 	//wallhack
 	if (wallhack > 0 && decl->Type == 5 && numElements == 11) //models
+	//if (wallhack > 0 && pSize == countnum)//1604 models, 2628 some models, 2752 other models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
 
@@ -141,10 +148,9 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		}
 
 		//glow
-		if (wallhack == 2 && pSize == 136) //outline shader
+		if (wallhack == 2 && pSize == 136) //hax shader
 		{
 			pDevice->SetPixelShader(NULL);
-			return D3D_OK; //delete shader
 		}
 
 		DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
@@ -158,9 +164,6 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		pDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 	}
 
-	//hp bar
-	//Stride == 4 && NumVertices == 4 && primCount == 4 && vSize == 232 && pSize == 308 && decl->Type == 6 && numElements == 2 && mStartRegister == 6 && mVector4fCount == 2 && vdesc.Type == 6
-
 	//aimbot
 	if (aimbot == 1 && Stride == 4 && NumVertices == 4 && primCount == 4 && mVector4fCount == 2) //hp bar
 		AddHPBarAim(pDevice, 1);
@@ -168,13 +171,20 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	if (aimbot == 2 && Stride == 4 && NumVertices == 4 && primCount == 4)
 		AddHPBarAim(pDevice, 1);
 
+	//if (pSize == 164)//outline shader
+		//AddEsp(pDevice, 1);
+
+	//esp
+	//if (pSize == 136)//glow efect
+		//AddEsp(pDevice, 1);
+
+
+	//if ((pSize == 164) && (GetAsyncKeyState(VK_F10) & 1)) 
+		//Log("startIndex == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", startIndex, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 	//remove hp bars/used for testing
 	//if((Stride == 4 && NumVertices == 4 && primCount == 4)
 		//return D3D_OK; 
-
-	//Stride == 36 && NumVertices == 11259 && primCount == 17369 && decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4
-	//if(vSize == 1216 && pSize == 164) //outline shader
 	
 	//test 
 	//D3DXMATRIX matScale;
@@ -194,7 +204,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		if (countnum == pSize/10)
 			if ((Stride > 0) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
 				//Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, mStartRegister, mVector4fCount);
-				Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+				Log("texCRC == %x && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", texCRC, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 		if (countnum == pSize/10)
 		{
 			pDevice->SetPixelShader(NULL);
@@ -212,7 +222,7 @@ bool DoInit = true;
 HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 {
 	//sprite
-	PreClear(pDevice);
+	//PreClear(pDevice);
 
 	if (DoInit)
 	{
@@ -255,6 +265,55 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	//DrawRect(pDevice, Viewport.Width / 2.0f - 1, Viewport.Height / 2.0f - 1, 1, 1, Green);
 	//DrawString(pFont, ScreenCenterX, ScreenCenterY, White, "+");
 
+	/*
+	//esp part 2
+	if ((aimbot > 0) && (EspInfo.size() != NULL))
+	{
+		UINT BestTarget = -1;
+		DOUBLE fClosestPos = 99999;
+
+		for (unsigned int i = 0; i < EspInfo.size(); i++)
+		{
+			//espfov
+			float radiusx = espfov * (ScreenCenterX / 100.0f);
+			float radiusy = espfov * (ScreenCenterY / 100.0f);
+
+			//get crosshairdistance
+			EspInfo[i].CrosshairDistance = GetDistance(EspInfo[i].vOutX, EspInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
+
+			//test w2s
+			if(logger)
+			DrawString(pFont, (int)EspInfo[i].vOutX, (int)EspInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "O");
+
+			//if in fov
+			if (EspInfo[i].vOutX >= ScreenCenterX - radiusx && EspInfo[i].vOutX <= ScreenCenterX + radiusx && EspInfo[i].vOutY >= ScreenCenterY - radiusy && EspInfo[i].vOutY <= ScreenCenterY + radiusy)
+
+				//get closest/nearest target to crosshair
+				if (EspInfo[i].CrosshairDistance < fClosestPos)
+				{
+					fClosestPos = EspInfo[i].CrosshairDistance;
+					BestTarget = i;
+				}
+		}
+
+
+		//if nearest target to crosshair
+		if (BestTarget != -1)
+		{
+			//reduce aimdown while reloading
+			float radius = 10 * (ScreenCenterX / 100);//10%
+			if (EspInfo[BestTarget].vOutX >= ScreenCenterX - radius && EspInfo[BestTarget].vOutX <= ScreenCenterX + radius && EspInfo[BestTarget].vOutY >= ScreenCenterY - radius && EspInfo[BestTarget].vOutY <= ScreenCenterY + radius)
+				inespfov = true;
+			else inespfov = false;
+
+			if (logger && inespfov)
+			DrawString(pFont, 210, 210, Green, "inespfov");
+			else if (!inespfov) DrawString(pFont, 200, 200, Red, "NOT inespfov");
+		}
+	}
+	EspInfo.clear();
+	*/
+
 	//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
 	if (aimkey == 0) Daimkey = 0;
 	if (aimkey == 1) Daimkey = VK_SHIFT;
@@ -266,7 +325,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	if (aimkey == 7) Daimkey = 0x58; //X
 	if (aimkey == 8) Daimkey = 0x43; //C
 
-				
+		
 	//aimbot part 2
 	if (aimbot > 0 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
 	//if (aimbot > 0 && AimHPBarInfo.size() != NULL)
@@ -290,7 +349,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			AimHPBarInfo[i].CrosshairDistance = GetDistance(AimHPBarInfo[i].vOutX, AimHPBarInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
 
 			//test w2s
-			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
+			if(logger)
+			DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 0, 0), "o");
 
 			//aim at team 1 or 2 (not possible atm)
 			//if (aimbot == AimHPBarInfo[i].iTeam)
@@ -309,6 +369,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 		//if nearest target to crosshair
 		if (BestTarget != -1)
+		//if (inespfov && BestTarget != -1)
 		{
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -517,10 +578,38 @@ HRESULT APIENTRY SetPixelShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DPixelSh
 
 //==========================================================================================================================
 
-//HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDirect3DBaseTexture9 *pTexture)
-//{
-//return SetTexture_orig(pDevice, Sampler, pTexture);
-//}
+HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDirect3DBaseTexture9 *pTexture)
+{
+	/*
+	//no
+	pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
+
+	if (Stride == 32 && Sampler == 0 && pCurrentTexture)
+	{
+		if (reinterpret_cast<IDirect3DTexture9 *>(pCurrentTexture)->GetType() == D3DRTYPE_TEXTURE)
+		{
+			pCurrentTexture->GetLevelDesc(0, &desc);
+			//if (desc.Pool == D3DPOOL_DEFAULT)
+			if (desc.Pool == D3DPOOL_MANAGED) 
+			{
+				//dWidth = desc.Width;
+				//dHeight = desc.Height;
+
+				pCurrentTexture->LockRect(0, &pLockedRect, NULL, D3DLOCK_NOOVERWRITE | D3DLOCK_READONLY); //no
+				//pCurrentTexture->LockRect(0, &pLockedRect, NULL, 0); //low fps
+				//pCurrentTexture->LockRect(0, &pLockedRect, NULL, D3DLOCK_NO_DIRTY_UPDATE); //low fps
+
+				if (pLockedRect.pBits != NULL)
+				//get crc
+				texCRC = QuickChecksum((DWORD*)pLockedRect.pBits, 1024);
+
+				pCurrentTexture->UnlockRect(0);
+			}
+		}
+	}
+	*/
+	return SetTexture_orig(pDevice, Sampler, pTexture);
+}
 
 //==========================================================================================================================
 
@@ -650,6 +739,7 @@ BOOL WINAPI DllMain(HMODULE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 			}
 		}
 
+		//CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)KillGGNow, NULL, NULL, NULL);
 		CreateThread(0, 0, DXInit, 0, 0, 0); //init our hooks
 		break;
 

@@ -47,15 +47,15 @@ IDirect3DPixelShader9* pShader;
 UINT pSize;
 
 //texture
-//D3DLOCKED_RECT pLockedRect;
-//D3DSURFACE_DESC desc;
-//IDirect3DTexture9* pCurrentTexture;
+D3DLOCKED_RECT pLockedRect;
+D3DSURFACE_DESC desc;
+IDirect3DTexture9* pCurrentTexture;
 
 //generate texture
 //LPDIRECT3DTEXTURE9 texRed, texGreen;
 
 //crc
-//DWORD texCRC;
+DWORD texCRC;
 
 D3DVIEWPORT9 Viewport; //use this viewport
 float ScreenCenterX;
@@ -63,7 +63,7 @@ float ScreenCenterY;
 
 //logger
 bool logger = false;
-int countnum = -1;
+int countnum = 1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -76,6 +76,7 @@ int aimsens = 3;				//aim sensitivity, makes aim smoother
 int aimfov = 6;					//aim field of view in % 
 int aimheight = 2;				//aim height value for menu, low value = aims heigher, high values aims lower
 int aimheightxy = 0;			//real value, aimheight * 4 + 27
+int espfov = 90;				//esp fov in % 90
 
 //autoshoot settings
 int autoshoot = 1;
@@ -84,10 +85,6 @@ bool IsPressed = false;			//
 
 //timer
 DWORD frametime = timeGetTime();
-
-//==========================================================================================================================
-
-//#define MODELS (decl->Type == 5 && numElements == 11)
 
 //==========================================================================================================================
 
@@ -115,6 +112,26 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
+
+DWORD QuickChecksum(DWORD *pData, int size)
+{
+	if (!pData) { return 0x0; }
+
+	DWORD sum;
+	DWORD tmp;
+	sum = *pData;
+
+	for (int i = 1; i < (size / 4); i++)
+	{
+		tmp = pData[i];
+		tmp = (DWORD)(sum >> 29) + tmp;
+		tmp = (DWORD)(sum >> 17) + tmp;
+		sum = (DWORD)(sum << 3) ^ tmp;
+	}
+
+	return sum;
+}
+
 
 /*
 //for crosshair
@@ -199,6 +216,37 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 	AimHPBarInfo.push_back(pAimHPBarInfo);
+	
+}
+
+// esp worldtoscreen
+struct EspInfo_t
+{
+	float vOutX, vOutY;
+	INT       iTeam;
+	float CrosshairDistance;
+};
+std::vector<EspInfo_t>EspInfo;
+bool inespfov = false;
+
+void AddEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
+{
+	aimheightxy = 47 + (aimheight*3.0f);
+
+	//Device->GetViewport(&Viewport);
+	D3DXMATRIX pProjection, pView, pWorld;
+	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, aimheightxy);
+
+	Device->GetVertexShaderConstantF(0, pProjection, 4);
+	Device->GetVertexShaderConstantF(231, pView, 4);
+
+	D3DXMatrixIdentity(&pWorld);
+
+	D3DXVec3Project(&vOut, &vIn, &Viewport, &pProjection, &pView, &pWorld);
+
+	EspInfo_t pModelInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y), iTeam }; //for glow effect
+	//EspInfo_t pModelInfo = { static_cast<float>(vOut.x + (Viewport.Width*0.5f)), static_cast<float>(vOut.y + (Viewport.Height*0.5f)), iTeam }; //for shader
+	EspInfo.push_back(pModelInfo);
 }
 
 /*
@@ -221,6 +269,14 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 //   MeshOrigin           c236     1
 //   MeshExtension        c237     1
 
+struct AimInfo_t
+{
+	float vOutX, vOutY;
+	INT       iTeam;
+	float CrosshairDistance;
+};
+std::vector<AimInfo_t>AimInfo;
+
 //w2s for models (would aim at all, and at dead, not good enough)
 void AddAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
@@ -228,7 +284,7 @@ void AddAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	//Device->GetViewport(&Viewport);
 	D3DXMATRIX pProjection, pView, pWorld;
-	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, 67 + (aimheight*3.0f));
+	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, 0));// 67 + (aimheight*3.0f));
 
 	Device->GetVertexShaderConstantF(0, pProjection, 4);
 	Device->GetVertexShaderConstantF(231, pView, 4);
@@ -241,13 +297,13 @@ void AddAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	D3DXVec3Project(&vOut, &vIn, &Viewport, &pProjection, &pView, &pWorld);
 
-		if (vOut.z < 1.0f)
-		{
+		//if (vOut.z < 1.0f)
+		//{
 			//float RealDistance = pProjection._44; //GetDistance(VectorMiddle.x, VectorMiddle.y, vIn.x, vIn.y);
 	
-			//AimInfo_t pAimInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y)};
-			//AimInfo.push_back(pAimInfo);
-		}
+			AimInfo_t pAimInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y)};
+			AimInfo.push_back(pAimInfo);
+		//}
 }
 */
 
@@ -697,7 +753,7 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 //=====================================================================================================================
 
 // menu part
-char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Chams]", "[On + Glow]" };
+char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Heads]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
@@ -754,3 +810,45 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 }
 
 //=====================================================================================================================
+/*
+//EasyAntiCheat.exe //C:\Windows\SysWOW64\EasyAntiCheat.exe
+//EasyAntiCheat_x86.dll  //D:\Program Files(x86)\Hi - Rez Studios\HiRezGames\paladins\Binaries\Win32\EasyAntiCheat\EasyAntiCheat_x86.dll
+#include <windows.h>
+#include <process.h>
+#include <Tlhelp32.h>
+#include <winbase.h>
+#include <string.h>
+void killProcessByName(const char *filename)
+{
+	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
+	PROCESSENTRY32 pEntry;
+	pEntry.dwSize = sizeof(pEntry);
+	BOOL hRes = Process32First(hSnapShot, &pEntry);
+	while (hRes)
+	{
+		if (strcmp(pEntry.szExeFile, filename) == 0)
+		{
+			HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0,
+				(DWORD)pEntry.th32ProcessID);
+			if (hProcess != NULL)
+			{
+				TerminateProcess(hProcess, 9);
+				CloseHandle(hProcess);
+			}
+		}
+		hRes = Process32Next(hSnapShot, &pEntry);
+	}
+	CloseHandle(hSnapShot);
+}
+
+void KillGGNow() {
+	while (1) {
+		killProcessByName("EasyAntiCheat.exe");
+		killProcessByName("EasyAntiCheat_x86.dll");
+		//KillGG("GameGuard.des");
+		//KillGG("GameMon.des");
+		//KillGG("GameMon64.des");
+		Sleep(200);
+	}
+}
+*/
