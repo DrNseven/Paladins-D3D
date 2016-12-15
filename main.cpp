@@ -171,11 +171,11 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	if (aimbot == 2 && Stride == 4 && NumVertices == 4 && primCount == 4)
 		AddHPBarAim(pDevice, 1);
 
+	//esp
 	//if (pSize == 164)//outline shader
 		//AddEsp(pDevice, 1);
 
-	//esp
-	//if (pSize == 136)//glow efect
+	//if (pSize == 136)//glow effect
 		//AddEsp(pDevice, 1);
 
 
