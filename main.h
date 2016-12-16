@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <vector>
+#include <string>
 #include <fstream>
 #include <time.h>
 #include <d3d9.h>
@@ -47,15 +48,22 @@ IDirect3DPixelShader9* pShader;
 UINT pSize;
 
 //texture
-D3DLOCKED_RECT pLockedRect;
-D3DSURFACE_DESC desc;
-IDirect3DTexture9* pCurrentTexture;
+//D3DLOCKED_RECT pLockedRect;
+//D3DSURFACE_DESC desc;
+
+//static const GUID IID_Texture = { 0xB65A38CA, 0xB6ED, 0x446B,{ 0xA4, 0x88, 0x47, 0x28, 0xD2, 0x41, 0x4E, 0xFA } };
+//static const GUID IID_Data = { 0xB6D352BF, 0x12E7, 0x40E5,{ 0xA5, 0xC9, 0x90, 0xCD, 0xD1, 0x18, 0x24, 0x93 } };
+IDirect3DTexture9* pCurrentTexture = NULL;
+//IDirect3DPixelShader9 *m_pSimpleShader;
+//bool D3DXAssembleShaderOnce = false;
+DWORD dwTextureCRC;
+DWORD dwDataCRC;
 
 //generate texture
 //LPDIRECT3DTEXTURE9 texRed, texGreen;
 
 //crc
-DWORD texCRC;
+//DWORD texCRC;
 
 D3DVIEWPORT9 Viewport; //use this viewport
 float ScreenCenterX;
@@ -180,6 +188,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//Device->GetViewport(&Viewport);
 
 	Device->GetVertexShaderConstantF(8, mvp, 4);//mvp
+	Device->GetVertexShaderConstantF(236, world, 4);//world 225-230, 236-241, 246-252
 
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
@@ -214,8 +223,11 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//to[0] = X
 	//to[1] = Y
 
-	AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
-	AimHPBarInfo.push_back(pAimHPBarInfo);
+	if (world._44 < (float)countnum/10)
+	{
+		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
+		AimHPBarInfo.push_back(pAimHPBarInfo);
+	}
 	
 }
 
@@ -756,7 +768,7 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Heads]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
-char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
+char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
 char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%]", "[70%]", "[80%]", "[90%]" };
 char *opt_Autoshoot[] = { "[OFF]", "[OnKeyDown]", "[Auto]" };
@@ -793,7 +805,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		AddItem(pDevice, " Wallhack", wallhack, opt_OnOff, 3);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 2);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
-		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 8);
+		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 18);
 		AddItem(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
 		AddItem(pDevice, " Aimheight", aimheight, opt_Aimheight, 9);
 		AddItem(pDevice, " Autoshoot", autoshoot, opt_Autoshoot, 1);
@@ -810,3 +822,30 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 }
 
 //=====================================================================================================================
+
+//Generic CRC functions
+#ifndef CHECKSUM_CRC_H
+#define CHECKSUM_CRC_H
+#ifdef _WIN32
+#pragma once
+#endif
+
+typedef unsigned long CRC32_t;
+
+void CRC32_Init(CRC32_t *pulCRC);
+void CRC32_ProcessBuffer(CRC32_t *pulCRC, const void *p, int len);
+void CRC32_Final(CRC32_t *pulCRC);
+CRC32_t    CRC32_GetTableEntry(unsigned int slot);
+
+inline CRC32_t CRC32_ProcessSingleBuffer(const void *p, int len)
+{
+	CRC32_t crc;
+
+	CRC32_Init(&crc);
+	CRC32_ProcessBuffer(&crc, p, len);
+	CRC32_Final(&crc);
+
+	return crc;
+}
+
+#endif // CHECKSUM_CRC_H
