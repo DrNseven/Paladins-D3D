@@ -223,11 +223,11 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//to[0] = X
 	//to[1] = Y
 
-	if (world._44 < (float)countnum/10)
-	{
+	//if (world._44 < 0.1f)
+	//{
 		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 		AimHPBarInfo.push_back(pAimHPBarInfo);
-	}
+	//}
 	
 }
 
@@ -822,30 +822,3 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 }
 
 //=====================================================================================================================
-
-//Generic CRC functions
-#ifndef CHECKSUM_CRC_H
-#define CHECKSUM_CRC_H
-#ifdef _WIN32
-#pragma once
-#endif
-
-typedef unsigned long CRC32_t;
-
-void CRC32_Init(CRC32_t *pulCRC);
-void CRC32_ProcessBuffer(CRC32_t *pulCRC, const void *p, int len);
-void CRC32_Final(CRC32_t *pulCRC);
-CRC32_t    CRC32_GetTableEntry(unsigned int slot);
-
-inline CRC32_t CRC32_ProcessSingleBuffer(const void *p, int len)
-{
-	CRC32_t crc;
-
-	CRC32_Init(&crc);
-	CRC32_ProcessBuffer(&crc, p, len);
-	CRC32_Final(&crc);
-
-	return crc;
-}
-
-#endif // CHECKSUM_CRC_H
