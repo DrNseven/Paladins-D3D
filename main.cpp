@@ -152,7 +152,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		}
 
 		//glow
-		if (wallhack == 2 && pSize == 136) //hax shader
+		if (wallhack == 2 && pSize == 136 && mStartRegister == 235) //hax shader
 		{
 			pDevice->SetPixelShader(NULL);
 		}
@@ -499,13 +499,8 @@ public:
 
 HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery)
 {
-	//Anti-Occlusion v2 (makes models visible through walls at all distances)
-	if (wallhack == 0 && Type == D3DQUERYTYPE_OCCLUSION)
-	{
-		Type = D3DQUERYTYPE_OCCLUSION;
-	}
-
-	if(wallhack > 0 && Type == D3DQUERYTYPE_OCCLUSION)
+	//Anti-Occlusion v2 (makes models visible through walls at all distances, reduces fps)
+	if(Type == D3DQUERYTYPE_OCCLUSION)
 	{
 		*ppQuery = new CFakeQuery;
 
@@ -514,7 +509,11 @@ HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, 
 		return D3D_OK;
 	}
 
-	//occlusion exploit
+	//if (Type == D3DQUERYTYPE_OCCLUSION)
+		//return CreateQuery_orig(pDevice, D3DQUERYTYPE_TIMESTAMP, ppQuery);//D3DQUERYTYPE_EVENT
+	//return CreateQuery_orig(pDevice, Type, ppQuery);
+
+	//occlusion exploit, reduces fps
 	//if (Type == D3DQUERYTYPE_OCCLUSION)
 	//{
 		//returns a non zero value for the number of pixels visible, so they will always be drawn
