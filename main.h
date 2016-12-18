@@ -71,7 +71,7 @@ float ScreenCenterY;
 
 //logger
 bool logger = false;
-int countnum = 1;
+int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -88,7 +88,7 @@ int espfov = 90;				//esp fov in % 90
 
 //autoshoot settings
 int autoshoot = 1;
-unsigned int asdelay = 99;		//use x-999 (shoot for 99 millisecs, looks more legit)
+unsigned int asdelay = 25;		//use x-999 (shoot for xx millisecs, looks more legit)
 bool IsPressed = false;			//
 
 //timer
@@ -188,7 +188,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//Device->GetViewport(&Viewport);
 
 	Device->GetVertexShaderConstantF(8, mvp, 4);//mvp
-	Device->GetVertexShaderConstantF(236, world, 4);//world 225-230, 236-241, 246-252
+	//Device->GetVertexShaderConstantF(240, world, 4);//world 225, 240-243, 247-252, 240
 
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
@@ -243,7 +243,8 @@ bool inespfov = false;
 
 void AddEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
-	aimheightxy = 47 + (aimheight*3.0f);
+	//aimheightxy = 47 + (aimheight*3.0f);
+	aimheightxy = 100 - (aimheight * 4.0f);
 
 	//Device->GetViewport(&Viewport);
 	D3DXMATRIX pProjection, pView, pWorld;
@@ -670,98 +671,6 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 	}
 }
 
-//==========================================================================================================================
-
-//draw sprites, pic esp v3.0
-LPD3DXSPRITE lpSprite = NULL;
-LPDIRECT3DTEXTURE9 lpSpriteImage = NULL;
-bool bSpriteCreated = false;
-
-bool CreateOverlaySprite(IDirect3DDevice9* pd3dDevice)
-{
-	HRESULT hr;
-
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("menu.png"), &lpSpriteImage); //png in hack dir
-	if (FAILED(hr))
-	{
-		//Log("D3DXCreateTextureFromFile failed");
-		bSpriteCreated = false;
-		return false;
-	}
-
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite);
-	if (FAILED(hr))
-	{
-		//Log("D3DXCreateSprite failed");
-		bSpriteCreated = false;
-		return false;
-	}
-
-	bSpriteCreated = true;
-
-	return true;
-}
-
-// COM utils
-template<class COMObject>
-void SafeRelease(COMObject*& pRes)
-{
-	IUnknown *unknown = pRes;
-	if (unknown)
-	{
-		unknown->Release();
-	}
-	pRes = NULL;
-}
-
-// This will get called before Device::Clear(). If the device has been reset
-// then all the work surfaces will be created again.
-void PreClear(IDirect3DDevice9* device)
-{
-	if (!bSpriteCreated)
-		CreateOverlaySprite(device);
-}
-
-// Delete work surfaces when device gets reset
-void DeleteRenderSurfaces()
-{
-	if (lpSprite != NULL)
-	{
-		//Log("SafeRelease(lpSprite)");
-		SafeRelease(lpSprite);
-	}
-
-	bSpriteCreated = false;
-}
-
-// This gets called right before the frame is presented on-screen - Device::Present().
-// First, create the display text, FPS and info message, on-screen. Then then call
-// CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
-void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
-{
-	int textOffsetLeft;
-
-	//draw sprite
-	if (bSpriteCreated)
-	{
-		if (lpSprite != NULL)
-		{
-			D3DXVECTOR3 position;
-			position.x = (float)cx;
-			position.y = (float)cy;
-			position.z = 0.0f;
-
-			textOffsetLeft = (int)position.x; //for later to offset text from image
-
-			lpSprite->Begin(D3DXSPRITE_ALPHABLEND);
-			lpSprite->Draw(lpSpriteImage, NULL, NULL, &position, 0xFFFFFFFF);
-			lpSprite->End();
-		}
-	}
-
-	// draw text
-}
-
 //=====================================================================================================================
 
 // menu part
@@ -794,7 +703,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		//draw background
 		FillRGB(pDevice, 20, 16, 168, 138, TBlack);
 		//draw menu pic
-		PrePresent(pDevice, 40, 26);
+		//PrePresent(pDevice, 40, 26);
 
 		DrawBox(pDevice, 20, 15, 168, 20, DarkOutline);
 		cWriteText(104, 18, White, "Paladins D3D");
@@ -821,4 +730,119 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 	}
 }
 
+//=====================================================================================================================
+
+IDirect3DPixelShader9 *shadRed;
+IDirect3DPixelShader9 *shadGreen;
+//generate shader
+HRESULT GenerateShader(IDirect3DDevice9 *pDevice, IDirect3DPixelShader9 **pShader, float r, float g, float b, float a, bool setzBuf)
+{
+	char szShader[256];
+	ID3DXBuffer *pShaderBuf = NULL;
+	D3DCAPS9 caps;
+	pDevice->GetDeviceCaps(&caps);
+	int PXSHVER1 = (D3DSHADER_VERSION_MAJOR(caps.PixelShaderVersion));
+	int PXSHVER2 = (D3DSHADER_VERSION_MINOR(caps.PixelShaderVersion));
+	if (setzBuf)
+		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0\nmov oDepth, c0.x", PXSHVER1, PXSHVER2, r, g, b, a);
+	else
+		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0", PXSHVER1, PXSHVER2, r, g, b, a);
+	D3DXAssembleShader(szShader, sizeof(szShader), NULL, NULL, 0, &pShaderBuf, NULL);
+	if (FAILED(pDevice->CreatePixelShader((const DWORD*)pShaderBuf->GetBufferPointer(), pShader)))return E_FAIL;
+	return S_OK;
+}
+
+//=====================================================================================================================
+
+/*
+//draw sprites, pic esp v3.0
+LPD3DXSPRITE lpSprite = NULL;
+LPDIRECT3DTEXTURE9 lpSpriteImage = NULL;
+bool bSpriteCreated = false;
+
+bool CreateOverlaySprite(IDirect3DDevice9* pd3dDevice)
+{
+HRESULT hr;
+
+hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("menu.png"), &lpSpriteImage); //png in hack dir
+if (FAILED(hr))
+{
+//Log("D3DXCreateTextureFromFile failed");
+bSpriteCreated = false;
+return false;
+}
+
+hr = D3DXCreateSprite(pd3dDevice, &lpSprite);
+if (FAILED(hr))
+{
+//Log("D3DXCreateSprite failed");
+bSpriteCreated = false;
+return false;
+}
+
+bSpriteCreated = true;
+
+return true;
+}
+
+// COM utils
+template<class COMObject>
+void SafeRelease(COMObject*& pRes)
+{
+IUnknown *unknown = pRes;
+if (unknown)
+{
+unknown->Release();
+}
+pRes = NULL;
+}
+
+// This will get called before Device::Clear(). If the device has been reset
+// then all the work surfaces will be created again.
+void PreClear(IDirect3DDevice9* device)
+{
+if (!bSpriteCreated)
+CreateOverlaySprite(device);
+}
+
+// Delete work surfaces when device gets reset
+void DeleteRenderSurfaces()
+{
+if (lpSprite != NULL)
+{
+//Log("SafeRelease(lpSprite)");
+SafeRelease(lpSprite);
+}
+
+bSpriteCreated = false;
+}
+
+// This gets called right before the frame is presented on-screen - Device::Present().
+// First, create the display text, FPS and info message, on-screen. Then then call
+// CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
+void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
+{
+int textOffsetLeft;
+
+//draw sprite
+if (bSpriteCreated)
+{
+if (lpSprite != NULL)
+{
+D3DXVECTOR3 position;
+position.x = (float)cx;
+position.y = (float)cy;
+position.z = 0.0f;
+
+textOffsetLeft = (int)position.x; //for later to offset text from image
+
+lpSprite->Begin(D3DXSPRITE_ALPHABLEND);
+lpSprite->Draw(lpSpriteImage, NULL, NULL, &position, 0xFFFFFFFF);
+lpSprite->End();
+}
+}
+
+// draw text
+}
+*/
 //=====================================================================================================================
