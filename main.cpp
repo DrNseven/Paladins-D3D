@@ -244,19 +244,6 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 	if (DoInit)
 	{
-		//get viewport
-		//pDevice->GetViewport(&Viewport);
-		//ScreenCenterX = (float)Viewport.Width / 2.0f;
-		//ScreenCenterY = (float)Viewport.Height / 2.0f;
-
-		//generate texture once
-		//GenerateTexture(pDevice, &texRed, D3DCOLOR_ARGB(255, 255, 0, 0));
-		//GenerateTexture(pDevice, &texGreen, D3DCOLOR_ARGB(255, 0, 255, 0));
-
-		//generate shader
-		//GenerateShader(pDevice, &shadRed, 1.0f, 0.0f, 0.0f, 1.0f, true);
-		//GenerateShader(pDevice, &shadGreen, 0.0f, 1.0f, 0.0f, 1.0f, true);
-
 		LoadSettings();
 
 		DoInit = false;
@@ -315,7 +302,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			//if(logger)
 			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
 
-			//aim at team 1 or 2 (not possible atm)
+			//aim at team 1 or 2 (not needed)
 			//if (aimbot == AimHPBarInfo[i].iTeam)
 
 			//if in fov
@@ -332,7 +319,6 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 		//if nearest target to crosshair
 		if (BestTarget != -1)
-		//if (inespfov && BestTarget != -1)
 		{
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -359,7 +345,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	AimHPBarInfo.clear();
 
 	//autoshoot off
-	if (autoshoot > 0 && IsPressed)
+	if (autoshoot == 1 && IsPressed)
 	{
 		if (timeGetTime() - frametime >= asdelay)
 		{
@@ -441,8 +427,8 @@ public:
 
 HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery)
 {
-	//Anti-Occlusion v2 (makes models visible through walls at all distances, reduces fps, 0 to 1 or 1 to 0 requires vid_restart F11 or alt + enter)
-	if(wallhack > 0 && Type == D3DQUERYTYPE_OCCLUSION)
+	//Anti-Occlusion v2 (used by wallhack to see models through walls at all distances, reduces fps, 0 to 1 or 1 to 0 requires vid_restart F11 or alt + enter)
+	if(occlusion == 1 && Type == D3DQUERYTYPE_OCCLUSION)
 	{
 		*ppQuery = new CFakeQuery;
 
@@ -561,7 +547,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 	{
 		D3DSURFACE_DESC surfaceDesc;
 
-		//pCurrentTexture->GetLevelDesc(0, &surfaceDesc);//this may crash after exiting
+		//pCurrentTexture->GetLevelDesc(0, &surfaceDesc);
 		if (pCurrentTexture && SUCCEEDED(pCurrentTexture->GetLevelDesc(0, &surfaceDesc)))
 		if (surfaceDesc.Pool == D3DPOOL_MANAGED)
 		{
@@ -580,12 +566,12 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 				if (&pLockedRect != NULL)
 				{
 
-					//if (pLockedRect.pBits != NULL)
-					//{
+					if (pLockedRect.pBits != NULL)
+					{
 						// get crc from the algorithm
 						dwDataCRC = QuickChecksum((DWORD*)pLockedRect.pBits, pLockedRect.Pitch);//sizeof(pLockedRect.pBits));
 						//dwTextureCRC = QuickChecksum((DWORD*)pCurrentTexture, pLockedRect.Pitch);
-					//}
+					}
 
 					//pCurrentTexture->UnlockRect(0);
 				}
@@ -601,7 +587,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 {
-	//SuspendMainThread();
+	SuspendMainThread();
 
 	HMODULE hDLL = NULL;
 	while (!hDLL)
@@ -705,7 +691,7 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	d3d->Release();
 	DestroyWindow(tmpWnd);
 
-	//ResumeMainThread();
+	ResumeMainThread();
 		
 	return 1;
 }

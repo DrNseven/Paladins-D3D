@@ -63,6 +63,7 @@ float ScreenCenterY;
 
 //features
 int wallhack = 1;				//wallhack
+int occlusion = 1;				//occlusion exploit
 
 //aimbot settings
 int aimbot = 1;
@@ -77,7 +78,7 @@ int aimheightxy = 0;			//real value, aimheight * 4 + 27
 
 //autoshoot settings
 int autoshoot = 1;
-unsigned int asdelay = 40;		//use x-999 (shoot for xx millisecs, looks more legit)
+unsigned int asdelay = 50;		//use x-999 (shoot for xx millisecs, looks more legit)
 bool IsPressed = false;			//
 
 //timer
@@ -235,6 +236,7 @@ void SaveSettings()
 	ofstream fout;
 	fout.open(GetDirectoryFile("palasettings.ini"), ios::trunc);
 	fout << "Wallhack " << wallhack << endl;
+	fout << "Occlusion " << occlusion << endl;
 	fout << "Aimbot " << aimbot << endl;
 	fout << "Aimkey " << aimkey << endl;
 	fout << "Aimsens " << aimsens << endl;
@@ -251,6 +253,7 @@ void LoadSettings()
 	string Word = "";
 	fin.open(GetDirectoryFile("palasettings.ini"), ifstream::in);
 	fin >> Word >> wallhack;
+	fin >> Word >> occlusion;
 	fin >> Word >> aimbot;
 	fin >> Word >> aimkey;
 	fin >> Word >> aimsens;
@@ -524,6 +527,7 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 
 // menu part
 char *opt_OnOff[] = { "[OFF]", "[On]" };
+char *opt_Occlusion[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Enemy]", "[All(Compatibility)]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
@@ -551,7 +555,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 			MenuSelection++;
 
 		//draw background
-		FillRGB(pDevice, 20, 16, 168, 138, TBlack);
+		FillRGB(pDevice, 20, 16, 168, 152, TBlack);
 		//draw menu pic
 		//PrePresent(pDevice, 40, 26);
 
@@ -562,6 +566,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		Current = 1;
 		//Category(pDevice, " [D3D]");
 		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
+		AddItem(pDevice, " Occlusion", occlusion, opt_Occlusion, 1);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 2);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
 		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 18);
@@ -573,12 +578,176 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		//if (MenuSelection >= Current)
 			//MenuSelection = 1;
 
-		if (MenuSelection > 7)
+		if (MenuSelection > 8)
 			MenuSelection = 1;//Current;
 
 		if (MenuSelection < 1)
-			MenuSelection = 7;//Current;
+			MenuSelection = 8;//Current;
 	}
 }
 
 //=====================================================================================================================
+
+
+// ===== Platform includes =====
+#include <tlhelp32.h>
+#include <Psapi.h>
+bool EnumerateThreadIDs(std::vector< DWORD >& thread_ids)
+{
+	// 
+	thread_ids.clear();
+
+	// Take a snapshot of all running threads  
+	HANDLE thread_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, GetCurrentProcessId());
+	if (thread_snapshot == INVALID_HANDLE_VALUE)
+		return false;
+
+	// Fill in the size of the structure before using it. 
+	THREADENTRY32 thread_entry;
+	thread_entry.dwSize = sizeof(thread_entry);
+
+	// Retrieve information about the first thread,
+	// and exit if unsuccessful
+	if (Thread32First(thread_snapshot, &thread_entry))
+	{
+		//
+		do
+		{
+			thread_ids.push_back(thread_entry.th32ThreadID);
+		} while (Thread32Next(thread_snapshot, &thread_entry));
+	}
+
+	// 
+	if (!CloseHandle(thread_snapshot))
+		return false;
+
+	// 
+	return true;
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+DWORD GetThreadEntryPoint(DWORD thread_id)
+{
+	// 
+	DWORD address_NtQueryInformationThread = (DWORD)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
+	if (address_NtQueryInformationThread == 0)
+		return 0;
+
+	// 
+	HANDLE thread_handle = OpenThread(THREAD_QUERY_INFORMATION, FALSE, thread_id);
+	if (thread_handle == nullptr)
+		return 0;
+
+	//
+	DWORD start_address = 0;
+
+
+	// 
+	long result = ((long(__stdcall *)(HANDLE, long, void*, DWORD, DWORD*))address_NtQueryInformationThread)(thread_handle, 9, &start_address, sizeof(start_address), nullptr);
+
+	// 
+	CloseHandle(thread_handle);
+
+	// 
+	if (result != 0)
+		return 0;
+
+	// 
+	return start_address;
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+DWORD GetProcessEntryPoint()
+{
+	// 
+	MODULEINFO module_info;
+	if (!GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &module_info, sizeof(module_info)))
+		return 0;
+
+	return (DWORD)module_info.EntryPoint;
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+DWORD GetMainThreadID()
+{
+	static DWORD main_thread_id = 0;
+	if (main_thread_id != 0)
+		return main_thread_id;
+
+	std::vector< DWORD > thread_ids;
+	if (!EnumerateThreadIDs(thread_ids))
+		return 0;
+
+	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
+	{
+		if (GetProcessEntryPoint() == GetThreadEntryPoint(*it))
+		{
+			main_thread_id = *it;
+
+			return *it;
+		}
+	}
+
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+void SuspendMainThread()
+{
+	std::vector< DWORD > thread_ids;
+	if (!EnumerateThreadIDs(thread_ids))
+		return;
+
+	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
+	{
+		if (GetCurrentThreadId() == *it)
+			continue;
+
+		if (GetMainThreadID() != *it)
+			continue;
+
+		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
+		if (thread_handle == nullptr)
+			continue;
+
+		SuspendThread(thread_handle);
+
+		CloseHandle(thread_handle);
+	}
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+void ResumeMainThread()
+{
+	std::vector< DWORD > thread_ids;
+	if (!EnumerateThreadIDs(thread_ids))
+		return;
+
+	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
+	{
+		if (GetCurrentThreadId() == *it)
+			continue;
+
+		if (GetMainThreadID() != *it)
+			continue;
+
+		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
+		if (thread_handle == nullptr)
+			continue;
+
+		ResumeThread(thread_handle);
+
+		CloseHandle(thread_handle);
+	}
+}
+
