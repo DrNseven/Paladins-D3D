@@ -37,7 +37,7 @@ UINT mStartRegister;
 UINT mVector4fCount;
 
 //vdesc.Size
-//D3DVERTEXBUFFER_DESC vdesc;
+D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
 IDirect3DVertexShader9* vShader;
@@ -58,6 +58,8 @@ IDirect3DTexture9* pCurrentTexture = NULL;
 //bool D3DXAssembleShaderOnce = false;
 DWORD dwTextureCRC;
 DWORD dwDataCRC;
+
+DWORD pdwDatasize;
 
 //generate texture
 //LPDIRECT3DTEXTURE9 texRed, texGreen;
@@ -88,7 +90,7 @@ int espfov = 90;				//esp fov in % 90
 
 //autoshoot settings
 int autoshoot = 1;
-unsigned int asdelay = 25;		//use x-999 (shoot for xx millisecs, looks more legit)
+unsigned int asdelay = 40;		//use x-999 (shoot for xx millisecs, looks more legit)
 bool IsPressed = false;			//
 
 //timer
@@ -230,7 +232,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//}
 	
 }
-
+/*
 // esp worldtoscreen
 struct EspInfo_t
 {
@@ -261,7 +263,7 @@ void AddEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//EspInfo_t pModelInfo = { static_cast<float>(vOut.x + (Viewport.Width*0.5f)), static_cast<float>(vOut.y + (Viewport.Height*0.5f)), iTeam }; //for shader
 	EspInfo.push_back(pModelInfo);
 }
-
+*/
 /*
 //   float4x3 BoneMatrices[75];
 //   float4x4 LocalToWorld;
