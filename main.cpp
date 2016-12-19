@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.1c by Nseven
+* Paladins D3D Hack Source V1.2beta by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -58,9 +58,9 @@ typedef HRESULT(APIENTRY *SetViewport)(IDirect3DDevice9*, CONST D3DVIEWPORT9*);
 HRESULT APIENTRY SetViewport_hook(IDirect3DDevice9*, CONST D3DVIEWPORT9*);
 SetViewport SetViewport_orig = 0;
 
-typedef HRESULT(APIENTRY *SetVertexShader)(IDirect3DDevice9*, IDirect3DVertexShader9*);
-HRESULT APIENTRY SetVertexShader_hook(IDirect3DDevice9*, IDirect3DVertexShader9*);
-SetVertexShader SetVertexShader_orig = 0;
+//typedef HRESULT(APIENTRY *SetVertexShader)(IDirect3DDevice9*, IDirect3DVertexShader9*);
+//HRESULT APIENTRY SetVertexShader_hook(IDirect3DDevice9*, IDirect3DVertexShader9*);
+//SetVertexShader SetVertexShader_orig = 0;
 
 typedef HRESULT(APIENTRY *SetPixelShader)(IDirect3DDevice9*, IDirect3DPixelShader9*);
 HRESULT APIENTRY SetPixelShader_hook(IDirect3DDevice9*, IDirect3DPixelShader9*);
@@ -124,6 +124,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 {
 	//models
 	//decl->Type == 5 && numElements == 11 //models
+	//dwDataCRC == d81bd7af && dWidth == 256 && dHeight == 256 && Stride == 32 && NumVertices == 7963 && primCount == 9442 && decl->Type == 5 && numElements == 11 && vSize == 1036 && pSize == 136 && mStartRegister == 235 && mVector4fCount == 1
 
 	//outline shader
 	//decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4 //outline shader
@@ -133,21 +134,13 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 	//hp bar
 	//Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 232 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 2 && vdesc.Type == 6
-	//dwDataCRC == 6e57204c && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 232 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 2
-	//dwDataCRC == 6e57204c && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 228 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 4
-	//dwTextureCRC == 6e57204c && dwDataCRC == e01402f8 && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 232 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 2
-	//dwTextureCRC == 6e57204c && dwDataCRC == 7b7122fe && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 228 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 4
-
-	//Stride == 32 && NumVertices == 7963 && primCount == 9442 && decl->Type == 5 && numElements == 11 && vSize == 1036 && pSize == 136 && mStartRegister == 235 && mVector4fCount == 1 && vdesc.Size == 254816
-	//Stride == 36 && NumVertices == 3767 && primCount == 5485 && decl->Type == 5 && numElements == 11 && vSize == 1840 && pSize == 1604 && mStartRegister == 238 && mVector4fCount == 1 && vdesc.Size == 135612
+	//dwDataCRC == cb415efe && dWidth == 12 && dHeight == 8 && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 232 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 2
 	
 	//wallhack
 	if (wallhack > 0 && decl->Type == 5 && numElements == 11) //models
-	//if (wallhack > 0 && pSize == countnum)//1604 models, 2628 some models, 2752 other models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
 		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_NEVER);
-		//pDevice->SetPixelShader(shadRed);
 
 		//chams
 		if (wallhack == 3)
@@ -177,10 +170,11 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//aimbot
 	//if (aimbot == 1 && Stride == 4 && NumVertices == 4 && primCount == 4 && decl->Type == 6 && numElements == 2 && vSize == 232 && pSize == 308 && mStartRegister == 6 && mVector4fCount == 2) //hp bar
 	//dwDataCRC == 0xcb415efe //orange hp bar
-	//dwDataCRC == d81bd7af //red hp bar
+	//dwDataCRC == 0xd81bd7af //red hp bar
 	//dwDataCRC == 0xad0d334b //blue hp bar
-	//if ((aimbot == 1 && dwDataCRC != 0xad0d334b && dwDataCRC != 0 && dwDataCRC != 0xFFFFFFFF))//if not team blue or bs untested
-	if((aimbot == 1 && Stride == 4 && NumVertices == 4 && primCount == 4) && (dwDataCRC == 0xcb415efe|| dwDataCRC == 0xd81bd7af|| dwDataCRC == 0xf14eb4d4))//team red/orange, enemy team
+	//if ((aimbot == 1 && dwDataCRC != 0xad0d334b && dwDataCRC != 0 && dwDataCRC != 0xFFFFFFFF))//if not team blue or bs, untested, may crash
+	//if((aimbot == 1 && Stride == 4 && NumVertices == 4 && primCount == 4 && dWidth == 12 && dHeight == 8) && (dwDataCRC == 0xcb415efe|| dwDataCRC == 0xd81bd7af|| dwDataCRC == 0xf14eb4d4))//team red/orange, enemy team
+	if ((aimbot == 1 && Stride == 4 && NumVertices == 4 && primCount == 4) && (dWidth == 12||dWidth == 1024) && (dwDataCRC == 0xcb415efe || dwDataCRC == 0xd81bd7af || dwDataCRC == 0xf14eb4d4))//team red/orange, enemy team
 		AddHPBarAim(pDevice, 1);
 
 	//compatibilty, aims at own team too
@@ -198,7 +192,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 	//log hp bar crc
 	//if ((Stride == 4 && NumVertices == 4 && primCount == 4 && vdesc.Size == 1747616) && (GetAsyncKeyState(VK_F10) & 1))
-		//Log("dwDataCRC == %x && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		//Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 	//remove hp bars/used for testing
 	//if((Stride == 4 && NumVertices == 4 && primCount == 4)
@@ -212,7 +206,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		//pDevice->SetVertexShaderConstantF(228, (float *)&matScale, 4); //232 log weapons mode, 234, 236 big outline, 228wallhackside4, 230wallhackup4, 231 log outline mode4
 	//}
 	
-
+	/*
 	//small bruteforce logger
 	if (logger)
 	{
@@ -223,18 +217,17 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 			countnum++;
 		if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
 			countnum = -1;
-		if (countnum == mStartRegister)
+		if (countnum == numElements)
 			if ((Stride > NULL) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
 				//Log("Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && mStartRegister == %d && mVector4fCount == %d", Stride, NumVertices, primCount, decl->Type, numElements, mStartRegister, mVector4fCount);
-				//Log("dwTextureCRC == %x && dwDataCRC == %x && pCurrentTexture == %x && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwTextureCRC, dwDataCRC, pCurrentTexture, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
-				Log("dwTextureCRC == %x && dwDataCRC == %x && pCurrentTexture == %x && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwTextureCRC, dwDataCRC, pCurrentTexture, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
-		if (countnum == mStartRegister)
+				Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		if (countnum == numElements)
 		{
 			pDevice->SetPixelShader(NULL);
 			return D3D_OK; //delete texture
 		}
 	}
-	
+	*/
 
 	return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 }
@@ -284,62 +277,6 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		BuildMenu(pDevice);
 	}
 
-	//crosshair
-	//DrawRect(pDevice, Viewport.Width/2.0f - 20, Viewport.Height / 2.0f, 40, 2, Red);
-	//DrawRect(pDevice, Viewport.Width / 2.0f, Viewport.Height / 2.0f - 20, 2, 40, Red);
-	//DrawRect(pDevice, Viewport.Width / 2.0f - 1, Viewport.Height / 2.0f - 1, 1, 1, Green);
-	//DrawString(pFont, ScreenCenterX, ScreenCenterY, White, "+");
-
-	/*
-	//esp part 2
-	if (aimbot > 0 && EspInfo.size() != NULL && GetAsyncKeyState(Daimkey))
-	//if ((aimbot > 0) && (EspInfo.size() != NULL))
-	{
-		UINT BestTarget = -1;
-		DOUBLE fClosestPos = 99999;
-
-		for (unsigned int i = 0; i < EspInfo.size(); i++)
-		{
-			//espfov
-			float radiusx = espfov * (ScreenCenterX / 100.0f);
-			float radiusy = espfov * (ScreenCenterY / 100.0f);
-
-			//get crosshairdistance
-			EspInfo[i].CrosshairDistance = GetDistance(EspInfo[i].vOutX, EspInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
-
-			//test w2s
-			if(logger)
-			DrawString(pFont, (int)EspInfo[i].vOutX, (int)EspInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
-
-			//if in fov
-			if (EspInfo[i].vOutX >= ScreenCenterX - radiusx && EspInfo[i].vOutX <= ScreenCenterX + radiusx && EspInfo[i].vOutY >= ScreenCenterY - radiusy && EspInfo[i].vOutY <= ScreenCenterY + radiusy)
-
-				//get closest/nearest target to crosshair
-				if (EspInfo[i].CrosshairDistance < fClosestPos)
-				{
-					fClosestPos = EspInfo[i].CrosshairDistance;
-					BestTarget = i;
-				}
-		}
-
-
-		//if nearest target to crosshair
-		if (BestTarget != -1)
-		{
-			//reduce aimdown while reloading
-			float radius = 20 * (ScreenCenterX / 100);//20%
-			if (EspInfo[BestTarget].vOutX >= ScreenCenterX - radius && EspInfo[BestTarget].vOutX <= ScreenCenterX + radius && EspInfo[BestTarget].vOutY >= ScreenCenterY - radius && EspInfo[BestTarget].vOutY <= ScreenCenterY + radius)
-				inespfov = true;
-			else inespfov = false;
-
-			if (logger && inespfov)
-			DrawString(pFont, 210, 210, Green, "inespfov");
-			else if (logger && !inespfov) DrawString(pFont, 200, 200, Red, "NOT inespfov");
-		}
-	}
-	EspInfo.clear();
-	*/
-
 	//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
 	if (aimkey == 0) Daimkey = 0;
 	if (aimkey == 1) Daimkey = VK_SHIFT;
@@ -375,8 +312,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			AimHPBarInfo[i].CrosshairDistance = GetDistance(AimHPBarInfo[i].vOutX, AimHPBarInfo[i].vOutY, ScreenCenterX, ScreenCenterY);
 
 			//test w2s
-			if(logger)
-			DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//if(logger)
+			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
 
 			//aim at team 1 or 2 (not possible atm)
 			//if (aimbot == AimHPBarInfo[i].iTeam)
@@ -431,7 +368,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			frametime = timeGetTime();
 		}
 	}
-
+	/*
 	//draw logger
 	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(VK_CONTROL)) && (GetAsyncKeyState(0x4C) & 1)) //ALT + CTRL + L toggles logger
 		logger = !logger;
@@ -444,7 +381,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		DrawString(pFont, 220, 120, Yellow, "hold O to -");
 		DrawString(pFont, 220, 130, Green, "press I to log");
 	}
-
+	*/
 	return EndScene_orig(pDevice);
 }
 
@@ -504,8 +441,8 @@ public:
 
 HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery)
 {
-	//Anti-Occlusion v2 (makes models visible through walls at all distances, reduces fps)
-	if(Type == D3DQUERYTYPE_OCCLUSION)
+	//Anti-Occlusion v2 (makes models visible through walls at all distances, reduces fps, 0 to 1 or 1 to 0 requires vid_restart F11 or alt + enter)
+	if(wallhack > 0 && Type == D3DQUERYTYPE_OCCLUSION)
 	{
 		*ppQuery = new CFakeQuery;
 
@@ -514,6 +451,7 @@ HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, 
 		return D3D_OK;
 	}
 
+	//occlusion exploit, reduces fps
 	//if (Type == D3DQUERYTYPE_OCCLUSION)
 		//return CreateQuery_orig(pDevice, D3DQUERYTYPE_TIMESTAMP, ppQuery);//D3DQUERYTYPE_EVENT
 	//return CreateQuery_orig(pDevice, Type, ppQuery);
@@ -582,7 +520,7 @@ HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pP
 }
 
 //==========================================================================================================================
-
+/*
 HRESULT APIENTRY SetVertexShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DVertexShader9 *veShader)
 {
 	if (veShader != NULL)
@@ -592,7 +530,7 @@ HRESULT APIENTRY SetVertexShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DVertex
 	}
 	return SetVertexShader_orig(pDevice, veShader);
 }
-
+*/
 //==========================================================================================================================
 
 HRESULT APIENTRY SetPixelShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DPixelShader9 *piShader)
@@ -609,16 +547,17 @@ HRESULT APIENTRY SetPixelShader_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DPixelSh
 
 HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDirect3DBaseTexture9 *pTexture)
 {
-	
+	if (pDevice == nullptr) return SetTexture_orig(pDevice, Sampler, pTexture);
+
 	//works
 	//pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
-	if(mStartRegister == 6 && mVector4fCount == 2 && aimbot > 0 && pTexture)
+	if(mStartRegister == 6 && mVector4fCount == 2 && aimbot == 1 && pTexture)
 		pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
 	//IDirect3DTexture9* pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
 
 	//Log("pCurrentTexture: %x", (DWORD)pCurrentTexture);
 
-	if (mStartRegister == 6 && mVector4fCount == 2 && aimbot > 0 && pCurrentTexture && Sampler == 0)//reduce fps loss
+	if (mStartRegister == 6 && mVector4fCount == 2 && aimbot == 1 && pCurrentTexture && Sampler == 0)//reduce fps loss
 	{
 		D3DSURFACE_DESC surfaceDesc;
 
@@ -626,12 +565,17 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 		if (pCurrentTexture && SUCCEEDED(pCurrentTexture->GetLevelDesc(0, &surfaceDesc)))
 		if (surfaceDesc.Pool == D3DPOOL_MANAGED)
 		{
+			dWidth = surfaceDesc.Width;
+			dHeight = surfaceDesc.Height;
+
 			//if (reinterpret_cast<IDirect3DTexture9 *>(pCurrentTexture)->GetType() == D3DRTYPE_TEXTURE)
-			if (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE)
+			//if (surfaceDesc.Width == 12 && surfaceDesc.Height == 8 && pCurrentTexture->GetType() == D3DRTYPE_TEXTURE)
+			if ((surfaceDesc.Width == 12 || surfaceDesc.Width == 1024) && (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE))
 			{
 				D3DLOCKED_RECT pLockedRect;
 
 				pCurrentTexture->LockRect(0, &pLockedRect, NULL, D3DLOCK_NOOVERWRITE | D3DLOCK_READONLY);
+				//pCurrentTexture->LockRect(0, &pLockedRect, NULL, D3DLOCK_NOOVERWRITE | D3DLOCK_NOSYSLOCK | D3DLOCK_DONOTWAIT | D3DLOCK_READONLY);
 
 				if (&pLockedRect != NULL)
 				{
@@ -643,9 +587,9 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 						//dwTextureCRC = QuickChecksum((DWORD*)pCurrentTexture, pLockedRect.Pitch);
 					//}
 
-					pCurrentTexture->UnlockRect(0);
+					//pCurrentTexture->UnlockRect(0);
 				}
-				//pCurrentTexture->UnlockRect(0);
+				pCurrentTexture->UnlockRect(0);
 			}
 		}
 	}
@@ -726,7 +670,7 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	Reset_orig = (Reset)dVtable[16];
 	CreateQuery_orig = (CreateQuery)dVtable[118];
 	SetViewport_orig = (SetViewport)dVtable[47];
-	SetVertexShader_orig = (SetVertexShader)dVtable[92];
+	//SetVertexShader_orig = (SetVertexShader)dVtable[92];
 	SetPixelShader_orig = (SetPixelShader)dVtable[107];
 	SetTexture_orig = (SetTexture)dVtable[65];
 
@@ -748,8 +692,8 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	if (MH_EnableHook((DWORD_PTR*)dVtable[118]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[47], &SetViewport_hook, reinterpret_cast<void**>(&SetViewport_orig)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dVtable[47]) != MH_OK) { return 1; }
-	if (MH_CreateHook((DWORD_PTR*)dVtable[92], &SetVertexShader_hook, reinterpret_cast<void**>(&SetVertexShader_orig)) != MH_OK) { return 1; }
-	if (MH_EnableHook((DWORD_PTR*)dVtable[92]) != MH_OK) { return 1; }
+	//if (MH_CreateHook((DWORD_PTR*)dVtable[92], &SetVertexShader_hook, reinterpret_cast<void**>(&SetVertexShader_orig)) != MH_OK) { return 1; }
+	//if (MH_EnableHook((DWORD_PTR*)dVtable[92]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[107], &SetPixelShader_hook, reinterpret_cast<void**>(&SetPixelShader_orig)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dVtable[107]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[65], &SetTexture_hook, reinterpret_cast<void**>(&SetTexture_orig)) != MH_OK) { return 1; }

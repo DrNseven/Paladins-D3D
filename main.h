@@ -40,40 +40,26 @@ UINT mVector4fCount;
 D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
-IDirect3DVertexShader9* vShader;
-UINT vSize;
+//IDirect3DVertexShader9* vShader;
+//UINT vSize;
 
 //pixelshader
 IDirect3DPixelShader9* pShader;
 UINT pSize;
 
-//texture
-//D3DLOCKED_RECT pLockedRect;
-//D3DSURFACE_DESC desc;
-
-//static const GUID IID_Texture = { 0xB65A38CA, 0xB6ED, 0x446B,{ 0xA4, 0x88, 0x47, 0x28, 0xD2, 0x41, 0x4E, 0xFA } };
-//static const GUID IID_Data = { 0xB6D352BF, 0x12E7, 0x40E5,{ 0xA5, 0xC9, 0x90, 0xCD, 0xD1, 0x18, 0x24, 0x93 } };
+//texture crc
 IDirect3DTexture9* pCurrentTexture = NULL;
-//IDirect3DPixelShader9 *m_pSimpleShader;
-//bool D3DXAssembleShaderOnce = false;
-DWORD dwTextureCRC;
 DWORD dwDataCRC;
-
-DWORD pdwDatasize;
-
-//generate texture
-//LPDIRECT3DTEXTURE9 texRed, texGreen;
-
-//crc
-//DWORD texCRC;
+int dWidth;
+int dHeight;
 
 D3DVIEWPORT9 Viewport; //use this viewport
 float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-bool logger = false;
-int countnum = -1;
+//bool logger = false;
+//int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -86,7 +72,8 @@ int aimsens = 3;				//aim sensitivity, makes aim smoother
 int aimfov = 6;					//aim field of view in % 
 int aimheight = 2;				//aim height value for menu, low value = aims heigher, high values aims lower
 int aimheightxy = 0;			//real value, aimheight * 4 + 27
-int espfov = 90;				//esp fov in % 90
+//int useworldpos = 0;
+//int espfov = 90;				//esp fov in % 90
 
 //autoshoot settings
 int autoshoot = 1;
@@ -142,16 +129,6 @@ DWORD QuickChecksum(DWORD *pData, int size)
 	return sum;
 }
 
-
-/*
-//for crosshair
-D3DCOLOR Red = D3DCOLOR_XRGB(255, 0, 0);
-void DrawRect(IDirect3DDevice9* dev, int x, int y, int w, int h, D3DCOLOR color)
-{
-	D3DRECT BarRect = { x, y, x + w, y + h };
-	dev->Clear(1, &BarRect, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, color, 0, 0);
-}
-*/
 //==========================================================================================================================
 
 //get distance
@@ -212,9 +189,6 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 		y -= 0.5f * to[1] * Viewport.Height - aimheightxy;
 		to[0] = x + Viewport.X;
 		to[1] = y + Viewport.Y;
-
-		to[0] = x + Viewport.X;
-		to[1] = y + Viewport.Y;
 	}
 	else
 	{
@@ -225,139 +199,10 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//to[0] = X
 	//to[1] = Y
 
-	//if (world._44 < 0.1f)
-	//{
 		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 		AimHPBarInfo.push_back(pAimHPBarInfo);
-	//}
-	
 }
-/*
-// esp worldtoscreen
-struct EspInfo_t
-{
-	float vOutX, vOutY;
-	INT       iTeam;
-	float CrosshairDistance;
-};
-std::vector<EspInfo_t>EspInfo;
-bool inespfov = false;
 
-void AddEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
-{
-	//aimheightxy = 47 + (aimheight*3.0f);
-	aimheightxy = 100 - (aimheight * 4.0f);
-
-	//Device->GetViewport(&Viewport);
-	D3DXMATRIX pProjection, pView, pWorld;
-	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, aimheightxy);
-
-	Device->GetVertexShaderConstantF(0, pProjection, 4);
-	Device->GetVertexShaderConstantF(231, pView, 4);
-
-	D3DXMatrixIdentity(&pWorld);
-
-	D3DXVec3Project(&vOut, &vIn, &Viewport, &pProjection, &pView, &pWorld);
-
-	EspInfo_t pModelInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y), iTeam }; //for glow effect
-	//EspInfo_t pModelInfo = { static_cast<float>(vOut.x + (Viewport.Width*0.5f)), static_cast<float>(vOut.y + (Viewport.Height*0.5f)), iTeam }; //for shader
-	EspInfo.push_back(pModelInfo);
-}
-*/
-/*
-//   float4x3 BoneMatrices[75];
-//   float4x4 LocalToWorld;
-//   float3 MeshExtension;
-//   float3 MeshOrigin;
-//   float3 TemporalAAParameters;
-//   float4x4 ViewProjectionMatrix;
-//
-//
-// Registers:
-//
-//   Name                 Reg   Size
-//   -------------------- ----- ----
-//   ViewProjectionMatrix c0       4
-//   BoneMatrices         c6     225
-//   LocalToWorld         c231     4
-//   TemporalAAParameters c235     1
-//   MeshOrigin           c236     1
-//   MeshExtension        c237     1
-
-struct AimInfo_t
-{
-	float vOutX, vOutY;
-	INT       iTeam;
-	float CrosshairDistance;
-};
-std::vector<AimInfo_t>AimInfo;
-
-//w2s for models (would aim at all, and at dead, not good enough)
-void AddAim(LPDIRECT3DDEVICE9 Device, int iTeam)
-{
-	//aimheight = 47 + (aimheight*3.0f);
-
-	//Device->GetViewport(&Viewport);
-	D3DXMATRIX pProjection, pView, pWorld;
-	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, 0));// 67 + (aimheight*3.0f));
-
-	Device->GetVertexShaderConstantF(0, pProjection, 4);
-	Device->GetVertexShaderConstantF(231, pView, 4);
-	//Device->GetVertexShaderConstantF(countnum, pWorld, 3);
-
-	D3DXMatrixIdentity(&pWorld);
-
-	//D3DXVECTOR3 VectorMiddle(0, 0, 0), ScreenMiddlee(Viewport.Width / 2.0f, Viewport.Height / 2.0f, 0);
-	//D3DXVec3Unproject(&VectorMiddle, &ScreenMiddlee, &Viewport, &pProjection, &pView, &pWorld);
-
-	D3DXVec3Project(&vOut, &vIn, &Viewport, &pProjection, &pView, &pWorld);
-
-		//if (vOut.z < 1.0f)
-		//{
-			//float RealDistance = pProjection._44; //GetDistance(VectorMiddle.x, VectorMiddle.y, vIn.x, vIn.y);
-	
-			AimInfo_t pAimInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y)};
-			AimInfo.push_back(pAimInfo);
-		//}
-}
-*/
-
-// Parameters:
-//
-//   float4 mvp[2];
-//
-//
-// Registers:
-//
-//   Name         Reg   Size
-//   ------------ ----- ----
-//   mvp          c6       4
-/*
-//w2s for small triangle in health bar, aims at all models, not good enough
-void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
-{
-	float xx, yy;
-	//D3DVIEWPORT9 Viewport;
-	//Device->GetViewport(&Viewport);
-	D3DXMATRIX matrix, m1;
-	D3DXVECTOR4 position, input;
-	Device->GetVertexShaderConstantF(6, m1, 4);//4
-
-	D3DXMatrixTranspose(&matrix, &m1);
-	//D3DXVec4Transform(&position, &input, &matrix);
-
-	position.x = input.x * matrix._11 + input.y * matrix._21 + input.z * matrix._31 + matrix._41;
-	position.y = input.x * matrix._12 + input.y * matrix._22 + input.z * matrix._32 + matrix._42;
-	position.z = input.x * matrix._13 + input.y * matrix._23 + input.z * matrix._33 + matrix._43;
-	position.w = input.x * matrix._14 + input.y * matrix._24 + input.z * matrix._34 + matrix._44;
-
-	xx = ((position.x / position.w) * (Viewport.Width / 2.0f)) + Viewport.X + (Viewport.Width / 2.0f);
-	yy = Viewport.Y + (Viewport.Height / 1.8f) - ((position.y / position.w) * (Viewport.Height / 1.8f));
-
-	AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam};
-	AimHPBarInfo.push_back(pAimHPBarInfo);
-}
-*/
 //==========================================================================================================================
 
 //-----------------------------------------------------------------------------
@@ -395,6 +240,7 @@ void SaveSettings()
 	fout << "Aimsens " << aimsens << endl;
 	fout << "Aimfov " << aimfov << endl;
 	fout << "Aimheight " << aimheight << endl;
+	//fout << "Useworldpos " << useworldpos << endl;
 	fout << "Autoshoot " << autoshoot << endl;
 	fout.close();
 }
@@ -410,6 +256,7 @@ void LoadSettings()
 	fin >> Word >> aimsens;
 	fin >> Word >> aimfov;
 	fin >> Word >> aimheight;
+	//fin >> Word >> useworldpos;
 	fin >> Word >> autoshoot;
 	fin.close();
 }
@@ -676,13 +523,14 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 //=====================================================================================================================
 
 // menu part
-char *opt_OnOff[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
-char *opt_Teams[] = { "[OFF]", "[Heads]", "[Compatibility]" };
+char *opt_OnOff[] = { "[OFF]", "[On]" };
+char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
+char *opt_Teams[] = { "[OFF]", "[Enemy]", "[All(Compatibility)]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
 char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%]", "[70%]", "[80%]", "[90%]" };
-char *opt_Autoshoot[] = { "[OFF]", "[OnKeyDown]", "[Auto]" };
+char *opt_Autoshoot[] = { "[OFF]", "[OnKeyDown]" };
 
 void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 {
@@ -713,12 +561,13 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 
 		Current = 1;
 		//Category(pDevice, " [D3D]");
-		AddItem(pDevice, " Wallhack", wallhack, opt_OnOff, 3);
+		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 2);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
 		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 18);
 		AddItem(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
 		AddItem(pDevice, " Aimheight", aimheight, opt_Aimheight, 9);
+		//AddItem(pDevice, " UseWorldPos", useworldpos, opt_OnOff, 1);
 		AddItem(pDevice, " Autoshoot", autoshoot, opt_Autoshoot, 1);
 
 		//if (MenuSelection >= Current)
@@ -732,119 +581,4 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 	}
 }
 
-//=====================================================================================================================
-
-IDirect3DPixelShader9 *shadRed;
-IDirect3DPixelShader9 *shadGreen;
-//generate shader
-HRESULT GenerateShader(IDirect3DDevice9 *pDevice, IDirect3DPixelShader9 **pShader, float r, float g, float b, float a, bool setzBuf)
-{
-	char szShader[256];
-	ID3DXBuffer *pShaderBuf = NULL;
-	D3DCAPS9 caps;
-	pDevice->GetDeviceCaps(&caps);
-	int PXSHVER1 = (D3DSHADER_VERSION_MAJOR(caps.PixelShaderVersion));
-	int PXSHVER2 = (D3DSHADER_VERSION_MINOR(caps.PixelShaderVersion));
-	if (setzBuf)
-		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0\nmov oDepth, c0.x", PXSHVER1, PXSHVER2, r, g, b, a);
-	else
-		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0", PXSHVER1, PXSHVER2, r, g, b, a);
-	D3DXAssembleShader(szShader, sizeof(szShader), NULL, NULL, 0, &pShaderBuf, NULL);
-	if (FAILED(pDevice->CreatePixelShader((const DWORD*)pShaderBuf->GetBufferPointer(), pShader)))return E_FAIL;
-	return S_OK;
-}
-
-//=====================================================================================================================
-
-/*
-//draw sprites, pic esp v3.0
-LPD3DXSPRITE lpSprite = NULL;
-LPDIRECT3DTEXTURE9 lpSpriteImage = NULL;
-bool bSpriteCreated = false;
-
-bool CreateOverlaySprite(IDirect3DDevice9* pd3dDevice)
-{
-HRESULT hr;
-
-hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("menu.png"), &lpSpriteImage); //png in hack dir
-if (FAILED(hr))
-{
-//Log("D3DXCreateTextureFromFile failed");
-bSpriteCreated = false;
-return false;
-}
-
-hr = D3DXCreateSprite(pd3dDevice, &lpSprite);
-if (FAILED(hr))
-{
-//Log("D3DXCreateSprite failed");
-bSpriteCreated = false;
-return false;
-}
-
-bSpriteCreated = true;
-
-return true;
-}
-
-// COM utils
-template<class COMObject>
-void SafeRelease(COMObject*& pRes)
-{
-IUnknown *unknown = pRes;
-if (unknown)
-{
-unknown->Release();
-}
-pRes = NULL;
-}
-
-// This will get called before Device::Clear(). If the device has been reset
-// then all the work surfaces will be created again.
-void PreClear(IDirect3DDevice9* device)
-{
-if (!bSpriteCreated)
-CreateOverlaySprite(device);
-}
-
-// Delete work surfaces when device gets reset
-void DeleteRenderSurfaces()
-{
-if (lpSprite != NULL)
-{
-//Log("SafeRelease(lpSprite)");
-SafeRelease(lpSprite);
-}
-
-bSpriteCreated = false;
-}
-
-// This gets called right before the frame is presented on-screen - Device::Present().
-// First, create the display text, FPS and info message, on-screen. Then then call
-// CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
-void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
-{
-int textOffsetLeft;
-
-//draw sprite
-if (bSpriteCreated)
-{
-if (lpSprite != NULL)
-{
-D3DXVECTOR3 position;
-position.x = (float)cx;
-position.y = (float)cy;
-position.z = 0.0f;
-
-textOffsetLeft = (int)position.x; //for later to offset text from image
-
-lpSprite->Begin(D3DXSPRITE_ALPHABLEND);
-lpSprite->Draw(lpSpriteImage, NULL, NULL, &position, 0xFFFFFFFF);
-lpSprite->End();
-}
-}
-
-// draw text
-}
-*/
 //=====================================================================================================================
