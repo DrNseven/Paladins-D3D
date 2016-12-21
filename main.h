@@ -177,7 +177,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	if (w > 0.01f)
 	{
-		aimheightxy = 27 + (aimheight * 4);
+		aimheightxy = 27 + (aimheight * 2);//4
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -202,6 +202,82 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 		AimHPBarInfo.push_back(pAimHPBarInfo);
+}
+
+//==========================================================================================================================
+
+struct AimTBarInfo_t
+{
+	float vOutX, vOutY;
+	INT       iTeam;
+	float CrosshairDistance;
+};
+std::vector<AimTBarInfo_t>AimTBarInfo;
+
+void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
+{
+	/*
+	float xx, yy;
+	//D3DVIEWPORT9 Viewport;
+	//Device->GetViewport(&Viewport);
+	D3DXMATRIX matrix, m1;
+	D3DXVECTOR4 position, input;
+	Device->GetVertexShaderConstantF(6, m1, 4);//6
+
+	D3DXMatrixTranspose(&matrix, &m1);
+	//D3DXVec4Transform(&position, &input, &matrix);
+
+	position.x = input.x * matrix._11 + input.y * matrix._21 + input.z * matrix._31 + matrix._41;
+	position.y = input.x * matrix._12 + input.y * matrix._22 + input.z * matrix._32 + matrix._42;
+	position.z = input.x * matrix._13 + input.y * matrix._23 + input.z * matrix._33 + matrix._43;
+	position.w = input.x * matrix._14 + input.y * matrix._24 + input.z * matrix._34 + matrix._44;
+
+	xx = ((position.x / position.w) * (Viewport.Width / 2.0f)) + Viewport.X + (Viewport.Width / 2.0f);
+	yy = Viewport.Y + (Viewport.Height / 1.8f) - ((position.y / position.w) * (Viewport.Height / 1.8f));
+
+	AimTBarInfo_t pAimTBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam };
+	AimTBarInfo.push_back(pAimTBarInfo);
+	*/
+	
+	D3DXVECTOR3 from, to;
+	D3DXMATRIX mvp, world;
+
+	Device->GetVertexShaderConstantF(6, mvp, 4);//mvp
+	//Device->GetVertexShaderConstantF(244, world, 4);//
+
+	float w = 0.0f;
+	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
+	to[1] = mvp[4] * world._14 + mvp[5] * world._24 + mvp[6] * world._34 + mvp[7];
+	w = mvp[12] * world._14 + mvp[13] * world._24 + mvp[14] * world._34 + mvp[15];
+
+	if (w > 0.01f)
+	{
+		aimheightxy = 27 + (aimheight * 4);
+
+		float invw = 1.0f / w;
+		to[0] *= invw;
+		to[1] *= invw;
+
+		float x = Viewport.Width / 2.0f;
+		float y = Viewport.Height / 2.0f;
+
+		x += 0.5f * to[0] * Viewport.Width + 0.5f;
+		y -= 0.5f * to[1] * Viewport.Height - aimheightxy;
+		to[0] = x + Viewport.X;
+		to[1] = y + Viewport.Y;
+	}
+	else
+	{
+		to[0] = -1.0f;
+		to[1] = -1.0f;
+	}
+
+	//to[0] = X
+	//to[1] = Y
+	
+	AimTBarInfo_t pAimTBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
+	AimTBarInfo.push_back(pAimTBarInfo);
+	
 }
 
 //==========================================================================================================================
@@ -529,7 +605,7 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 char *opt_OnOff[] = { "[OFF]", "[On]" };
 char *opt_Occlusion[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
-char *opt_Teams[] = { "[OFF]", "[Enemy]", "[All(Compatibility)]" };
+char *opt_Teams[] = { "[OFF]", "[Enemy]", "[Enemy T]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
@@ -588,7 +664,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 
 //=====================================================================================================================
 
-
+/*
 // ===== Platform includes =====
 #include <tlhelp32.h>
 #include <Psapi.h>
@@ -750,4 +826,4 @@ void ResumeMainThread()
 		CloseHandle(thread_handle);
 	}
 }
-
+*/
