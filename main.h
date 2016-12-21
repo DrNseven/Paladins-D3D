@@ -58,8 +58,8 @@ float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-bool logger = false;
-int countnum = -1;
+//bool logger = false;
+//int countnum = 1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -95,7 +95,7 @@ char* GetDirectoryFile(char *filename)
 	strcat_s(path, filename);
 	return path;
 }
-
+/*
 void Log(const char *fmt, ...)
 {
 	if (!fmt)	return;
@@ -110,7 +110,7 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
-
+*/
 DWORD QuickChecksum(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
@@ -216,29 +216,6 @@ std::vector<AimTBarInfo_t>AimTBarInfo;
 
 void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
-	/*
-	float xx, yy;
-	//D3DVIEWPORT9 Viewport;
-	//Device->GetViewport(&Viewport);
-	D3DXMATRIX matrix, m1;
-	D3DXVECTOR4 position, input;
-	Device->GetVertexShaderConstantF(6, m1, 4);//6
-
-	D3DXMatrixTranspose(&matrix, &m1);
-	//D3DXVec4Transform(&position, &input, &matrix);
-
-	position.x = input.x * matrix._11 + input.y * matrix._21 + input.z * matrix._31 + matrix._41;
-	position.y = input.x * matrix._12 + input.y * matrix._22 + input.z * matrix._32 + matrix._42;
-	position.z = input.x * matrix._13 + input.y * matrix._23 + input.z * matrix._33 + matrix._43;
-	position.w = input.x * matrix._14 + input.y * matrix._24 + input.z * matrix._34 + matrix._44;
-
-	xx = ((position.x / position.w) * (Viewport.Width / 2.0f)) + Viewport.X + (Viewport.Width / 2.0f);
-	yy = Viewport.Y + (Viewport.Height / 1.8f) - ((position.y / position.w) * (Viewport.Height / 1.8f));
-
-	AimTBarInfo_t pAimTBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam };
-	AimTBarInfo.push_back(pAimTBarInfo);
-	*/
-	
 	D3DXVECTOR3 from, to;
 	D3DXMATRIX mvp, world;
 
@@ -274,10 +251,61 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	//to[0] = X
 	//to[1] = Y
-	
+
 	AimTBarInfo_t pAimTBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 	AimTBarInfo.push_back(pAimTBarInfo);
-	
+
+	/*
+	float xx, yy;
+	D3DXMATRIX projMatrix, m1;
+	D3DXVECTOR4 position, input;
+
+	float VWidth = Viewport.Width * 0.5f;
+	float VHeight = Viewport.Height * 0.5f;
+	Device->GetVertexShaderConstantF(6, projMatrix, 4);
+
+	//input.y = 1; //height
+
+	D3DXMatrixTranspose(&projMatrix, &projMatrix);
+	D3DXVec4Transform(&position, &input, &projMatrix);
+
+	position.x = input.x * projMatrix._11 + input.y * projMatrix._21 + input.z * projMatrix._31 + projMatrix._41;
+	position.y = input.x * projMatrix._12 + input.y * projMatrix._22 + input.z * projMatrix._32 + projMatrix._42;
+	position.z = input.x * projMatrix._13 + input.y * projMatrix._23 + input.z * projMatrix._33 + projMatrix._43;
+	position.w = input.x * projMatrix._14 + input.y * projMatrix._24 + input.z * projMatrix._34 + projMatrix._44;
+
+	//if (projMatrix._44 > -0.1f)
+	//{
+		//float RealDistance = position.w;
+
+		xx = Viewport.X + VWidth - VWidth * position.x / position.w;
+		yy = Viewport.Y + VHeight + VHeight * position.y / position.w; //+ not -
+
+		AimTBarInfo_t pAimTBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam };
+		AimTBarInfo.push_back(pAimTBarInfo);
+	//}
+	*/
+
+	/*
+	float xx, yy;
+	D3DXMATRIX matrix, m1;
+	D3DXVECTOR4 position, input;
+	Device->GetVertexShaderConstantF(6, m1, 4);//6
+
+	D3DXMatrixTranspose(&matrix, &m1);
+	//D3DXVec4Transform(&position, &input, &matrix);
+
+	position.x = input.x * matrix._11 + input.y * matrix._21 + input.z * matrix._31 + matrix._41;
+	position.y = input.x * matrix._12 + input.y * matrix._22 + input.z * matrix._32 + matrix._42;
+	position.z = input.x * matrix._13 + input.y * matrix._23 + input.z * matrix._33 + matrix._43;
+	position.w = input.x * matrix._14 + input.y * matrix._24 + input.z * matrix._34 + matrix._44;
+
+	xx = ((position.x / position.w) * (Viewport.Width / 2.0f)) + Viewport.X + (Viewport.Width / 2.0f);
+	yy = Viewport.Y + (Viewport.Height / 1.8f) - ((position.y / position.w) * (Viewport.Height / 1.8f));
+
+	AimTBarInfo_t pAimTBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam };
+	AimTBarInfo.push_back(pAimTBarInfo);
+	*/
 }
 
 //==========================================================================================================================
@@ -605,7 +633,7 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 char *opt_OnOff[] = { "[OFF]", "[On]" };
 char *opt_Occlusion[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
-char *opt_Teams[] = { "[OFF]", "[Enemy]", "[Enemy T]" };
+char *opt_Teams[] = { "[OFF]", "[Enemy]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };

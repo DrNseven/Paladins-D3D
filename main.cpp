@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.2c by Nseven
+* Paladins D3D Hack Source V1.2e by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -172,16 +172,15 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		pDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 	}
-	
+
 	//aimbot
 	if ((NumVertices != 96 && aimbot == 1 && Stride == 12 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12) && (dWidth == 12 || dWidth == 1024) && (dwDataCRC == 0xcb415efe || dwDataCRC == 0xd81bd7af || dwDataCRC == 0xf14eb4d4 || dwDataCRC == 0x64ab1b60))// || dwDataCRC == 0x9b49def7|| dwDataCRC == 0x6fe03c69 || dwDataCRC == 0xe768cd5b || dwDataCRC == 0x462bc817))//team red/orange, enemy team
 		AddHPBarAim(pDevice, 1);
 
 	//aimbot2
-	if ((NumVertices != 96 && aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10)&&(dwDataCRC == 0xd81bd7af|| dwDataCRC == 0xcb415efe))//team red/orange, enemy team
-	//if ((aimbot == 2) && (dwDataCRC == 0xd81bd7af || dwDataCRC == 0xcb415efe))//team red/orange, enemy team
+	if ((NumVertices != 96 && aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10) && (dwDataCRC == 0xd81bd7af || dwDataCRC == 0xcb415efe))//team red/orange, enemy team
 		AddTBarAim(pDevice, 1);
-
+	
 	//esp
 	//if (decl->Type == 5 && numElements == 11 && pSize == 164 && mStartRegister == 231)//outline shader
 		//AddEsp(pDevice, 1);
@@ -192,8 +191,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 	//log hp bar crc
 	//if ((Stride == 12 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12) && (GetAsyncKeyState(VK_F10) & 1))
-	if((dwDataCRC == 0xd81bd7af) && (GetAsyncKeyState(VK_F10) & 1))
-		Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		//Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 	//crosshair
 	//dwDataCRC == f14eb4d4 && dWidth == 256 && dHeight == 256 && Stride == 12 && NumVertices == 96 && primCount == 120 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 36 && vdesc.Size == 1747616
@@ -201,9 +199,10 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//remove, used for testing
 	//if(Stride == 12 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12)
 	//if(dwDataCRC == 0xcb415efe && Stride == 8)
+	//if(dwDataCRC == 0x9d2a2356)
 		//return D3D_OK; 
 	
-	
+	/*
 	//small bruteforce logger
 	if (logger)
 	{
@@ -224,7 +223,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 			//return D3D_OK; //delete texture
 		}
 	}
-	
+	*/
 
 	return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 }
@@ -345,8 +344,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 	//aimbot part 2
-	//if (aimbot > 0 && AimTBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
-	if (aimbot == 2 && AimTBarInfo.size() != NULL)
+	if (aimbot == 2 && AimTBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
+	//if (aimbot > 0 && AimTBarInfo.size() != NULL)
 	{
 		UINT BestTarget = -1;
 		DOUBLE fClosestPos = 99999;
@@ -355,7 +354,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		{
 			//test w2s
 			//if (logger)
-			DrawString(pFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//DrawString(pFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
 			//DrawString(pFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%x", dwDataCRC);
 
 			//aimfov
@@ -426,7 +425,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			frametime = timeGetTime();
 		}
 	}
-	
+	/*
 	//draw logger
 	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(VK_CONTROL)) && (GetAsyncKeyState(0x4C) & 1)) //ALT + CTRL + L toggles logger
 		logger = !logger;
@@ -439,7 +438,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		DrawString(pFont, 220, 120, Yellow, "hold O to -");
 		DrawString(pFont, 220, 130, Green, "press I to log");
 	}
-	
+	*/
 	return EndScene_orig(pDevice);
 }
 
