@@ -40,8 +40,8 @@ UINT mVector4fCount;
 D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
-//IDirect3DVertexShader9* vShader;
-//UINT vSize;
+IDirect3DVertexShader9* vShader;
+UINT vSize;
 
 //pixelshader
 IDirect3DPixelShader9* pShader;
@@ -58,8 +58,8 @@ float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-//bool logger = false;
-//int countnum = -1;
+bool logger = false;
+int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -168,7 +168,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//Device->GetViewport(&Viewport);
 
 	Device->GetVertexShaderConstantF(8, mvp, 4);//mvp
-	//Device->GetVertexShaderConstantF(240, world, 4);//world 225, 240-243, 247-252, 240
+	//Device->GetVertexShaderConstantF(countnum, world, 4);//world 225, 240-243, 247-252, 240
 
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
