@@ -1,5 +1,5 @@
 # Paladins-D3D
-paladins d3d multihack
+paladins d3d multihack (for version 0.40 or higher)
 
 ![alt tag](https://github.com/DrNseven/Paladins-D3D/blob/master/Release/menu.png)
 
