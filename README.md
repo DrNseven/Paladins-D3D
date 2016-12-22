@@ -9,6 +9,7 @@ How to compile:
 
 - open paladinsd3d.vcxproj (not paladinsd3d.vcxproj.filters) with Visual Studio 2015 (Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\WDExpress.exe)
 - select x86(32bit) 
+- click: project -> properties -> configuration properties -> general -> character set -> change to "not set"
 - compile dll, press f7 or click the green triangle
 
 x86 compiled dll will be in paladinsd3d\Release folder
