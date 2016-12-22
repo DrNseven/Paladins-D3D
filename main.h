@@ -633,7 +633,7 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 char *opt_OnOff[] = { "[OFF]", "[On]" };
 char *opt_Occlusion[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
-char *opt_Teams[] = { "[OFF]", "[Enemy]", "[Compatibility]" };
+char *opt_Teams[] = { "[OFF]", "[Mode 1]", "[Mode 2]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
@@ -671,7 +671,7 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		//Category(pDevice, " [D3D]");
 		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
 		AddItem(pDevice, " Occlusion", occlusion, opt_Occlusion, 1);
-		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 2);
+		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 3);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
 		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 18);
 		AddItem(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);

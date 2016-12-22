@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.2e by Nseven
+* Paladins D3D Hack Source V1.2f by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -180,6 +180,10 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//aimbot2
 	if ((NumVertices != 96 && aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10) && (dwDataCRC == 0xd81bd7af || dwDataCRC == 0xcb415efe))//team red/orange, enemy team
 		AddTBarAim(pDevice, 1);
+
+	//compatibility
+	if (NumVertices != 96 && aimbot == 3 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
+		AddTBarAim(pDevice, 1);
 	
 	//esp
 	//if (decl->Type == 5 && numElements == 11 && pSize == 164 && mStartRegister == 231)//outline shader
@@ -344,7 +348,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 	//aimbot part 2
-	if (aimbot == 2 && AimTBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
+	if (aimbot >= 2 && AimTBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
 	//if (aimbot > 0 && AimTBarInfo.size() != NULL)
 	{
 		UINT BestTarget = -1;
@@ -574,11 +578,13 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 	if (pDevice == nullptr) return SetTexture_orig(pDevice, Sampler, pTexture);
 
 	//works
-	if ((mStartRegister == 6 && mVector4fCount != 0 && aimbot == 1 && pTexture)||(mStartRegister == 6 && aimbot == 2 && pTexture))
+	//if ((mStartRegister == 6 && mVector4fCount != 0 && aimbot == 1 && pTexture)||(mStartRegister == 6 && aimbot == 2 && pTexture))
+	if(aimbot == 1 && pTexture ||aimbot == 2 && pTexture)
 		pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
 	//IDirect3DTexture9* pCurrentTexture = static_cast<IDirect3DTexture9*>(pTexture);
 
-	if ((mStartRegister == 6 && mVector4fCount != 0 && aimbot == 1 && pCurrentTexture && Sampler == 0)||(mStartRegister == 6 && aimbot == 2 && pCurrentTexture && Sampler == 0))//reduce fps loss)
+	//if ((mStartRegister == 6 && mVector4fCount != 0 && aimbot == 1 && pCurrentTexture && Sampler == 0)||(mStartRegister == 6 && aimbot == 2 && pCurrentTexture && Sampler == 0))//reduce fps loss)
+	if (aimbot == 1 && pCurrentTexture && Sampler == 0 || aimbot == 2 && pCurrentTexture && Sampler == 0)
 	{
 		D3DSURFACE_DESC surfaceDesc;
 
@@ -589,6 +595,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 			dWidth = surfaceDesc.Width;
 			dHeight = surfaceDesc.Height;
 
+			//if (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE)
 			//if (reinterpret_cast<IDirect3DTexture9 *>(pCurrentTexture)->GetType() == D3DRTYPE_TEXTURE)
 			if ((surfaceDesc.Width == 12 || surfaceDesc.Width == 1024) && (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE))
 			{
