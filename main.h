@@ -52,14 +52,15 @@ IDirect3DTexture9* pCurrentTexture = NULL;
 DWORD dwDataCRC;
 int dWidth;
 int dHeight;
+int dFormat;
 
 D3DVIEWPORT9 Viewport; //use this viewport
 float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-//bool logger = false;
-//int countnum = 1;
+bool logger = false;
+int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -95,7 +96,7 @@ char* GetDirectoryFile(char *filename)
 	strcat_s(path, filename);
 	return path;
 }
-/*
+
 void Log(const char *fmt, ...)
 {
 	if (!fmt)	return;
@@ -110,7 +111,7 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
-*/
+
 DWORD QuickChecksum(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
