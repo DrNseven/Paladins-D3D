@@ -67,7 +67,7 @@ int wallhack = 1;				//wallhack
 int occlusion = 1;				//occlusion exploit
 
 //aimbot settings
-int aimbot = 1;
+int aimbot = 2;
 int aimkey = 2;
 DWORD Daimkey = VK_RBUTTON;		//aimkey
 int aimsens = 3;				//aim sensitivity, makes aim smoother
@@ -168,7 +168,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//D3DVIEWPORT9 Viewport;
 	//Device->GetViewport(&Viewport);
 
-	Device->GetVertexShaderConstantF(8, mvp, 4);//mvp
+	Device->GetVertexShaderConstantF(8, mvp, 4);//8mvp
 	//Device->GetVertexShaderConstantF(countnum, world, 4);//world 225, 240-243, 247-252, 240
 
 	float w = 0.0f;
@@ -201,8 +201,37 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//to[0] = X
 	//to[1] = Y
 
+		//AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0] + (Viewport.Width*0.5f)), static_cast<float>(to[1] + (Viewport.Height*0.5f)), iTeam };
 		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 		AimHPBarInfo.push_back(pAimHPBarInfo);
+
+	/*
+	//esp
+	aimheightxy = 47 + (aimheight*3.0f);
+
+	//Device->GetViewport(&Viewport);
+	D3DXMATRIX pProjection, pView, pWorld;
+	D3DXVECTOR3 vOut(0, 0, 0), vIn(0, 0, aimheightxy);
+
+	Device->GetVertexShaderConstantF(0, pProjection, 4);
+	Device->GetVertexShaderConstantF(231, pView, 4);//231
+	//Device->GetVertexShaderConstantF(countnum, pWorld, 3);
+
+	D3DXMatrixIdentity(&pWorld);
+
+	//D3DXVECTOR3 VectorMiddle(0, 0, 0), ScreenMiddlee(Viewport.Width / 2.0f, Viewport.Height / 2.0f, 0);
+	//D3DXVec3Unproject(&VectorMiddle, &ScreenMiddlee, &Viewport, &pProjection, &pView, &pWorld);
+
+	D3DXVec3Project(&vOut, &vIn, &Viewport, &pProjection, &pView, &pWorld);
+
+	//if (vOut.z < 1.0f)
+	//{
+	//float RealDistance = pProjection._44; //GetDistance(VectorMiddle.x, VectorMiddle.y, vIn.x, vIn.y);
+
+	//AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(vOut.x + (Viewport.Width*0.5f)), static_cast<float>(vOut.y + (Viewport.Height*0.5f)), iTeam };//pSize 164 (outline)
+	AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(vOut.x), static_cast<float>(vOut.y), iTeam }; //pSize 136 (glow)
+	AimHPBarInfo.push_back(pAimHPBarInfo);
+	*/
 }
 
 //==========================================================================================================================
@@ -692,167 +721,25 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 }
 
 //=====================================================================================================================
-
 /*
-// ===== Platform includes =====
-#include <tlhelp32.h>
-#include <Psapi.h>
-bool EnumerateThreadIDs(std::vector< DWORD >& thread_ids)
+IDirect3DPixelShader9 *shadRed;
+IDirect3DPixelShader9 *shadGreen;
+//generate shader
+HRESULT GenerateShader(IDirect3DDevice9 *pDevice, IDirect3DPixelShader9 **pShader, float r, float g, float b, float a, bool setzBuf)
 {
-	// 
-	thread_ids.clear();
-
-	// Take a snapshot of all running threads  
-	HANDLE thread_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, GetCurrentProcessId());
-	if (thread_snapshot == INVALID_HANDLE_VALUE)
-		return false;
-
-	// Fill in the size of the structure before using it. 
-	THREADENTRY32 thread_entry;
-	thread_entry.dwSize = sizeof(thread_entry);
-
-	// Retrieve information about the first thread,
-	// and exit if unsuccessful
-	if (Thread32First(thread_snapshot, &thread_entry))
-	{
-		//
-		do
-		{
-			thread_ids.push_back(thread_entry.th32ThreadID);
-		} while (Thread32Next(thread_snapshot, &thread_entry));
-	}
-
-	// 
-	if (!CloseHandle(thread_snapshot))
-		return false;
-
-	// 
-	return true;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetThreadEntryPoint(DWORD thread_id)
-{
-	// 
-	DWORD address_NtQueryInformationThread = (DWORD)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
-	if (address_NtQueryInformationThread == 0)
-		return 0;
-
-	// 
-	HANDLE thread_handle = OpenThread(THREAD_QUERY_INFORMATION, FALSE, thread_id);
-	if (thread_handle == nullptr)
-		return 0;
-
-	//
-	DWORD start_address = 0;
-
-
-	// 
-	long result = ((long(__stdcall *)(HANDLE, long, void*, DWORD, DWORD*))address_NtQueryInformationThread)(thread_handle, 9, &start_address, sizeof(start_address), nullptr);
-
-	// 
-	CloseHandle(thread_handle);
-
-	// 
-	if (result != 0)
-		return 0;
-
-	// 
-	return start_address;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetProcessEntryPoint()
-{
-	// 
-	MODULEINFO module_info;
-	if (!GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &module_info, sizeof(module_info)))
-		return 0;
-
-	return (DWORD)module_info.EntryPoint;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-DWORD GetMainThreadID()
-{
-	static DWORD main_thread_id = 0;
-	if (main_thread_id != 0)
-		return main_thread_id;
-
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return 0;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetProcessEntryPoint() == GetThreadEntryPoint(*it))
-		{
-			main_thread_id = *it;
-
-			return *it;
-		}
-	}
-
-	return 0;
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-void SuspendMainThread()
-{
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetCurrentThreadId() == *it)
-			continue;
-
-		if (GetMainThreadID() != *it)
-			continue;
-
-		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
-		if (thread_handle == nullptr)
-			continue;
-
-		SuspendThread(thread_handle);
-
-		CloseHandle(thread_handle);
-	}
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-void ResumeMainThread()
-{
-	std::vector< DWORD > thread_ids;
-	if (!EnumerateThreadIDs(thread_ids))
-		return;
-
-	for (auto it = thread_ids.begin(); it != thread_ids.end(); it++)
-	{
-		if (GetCurrentThreadId() == *it)
-			continue;
-
-		if (GetMainThreadID() != *it)
-			continue;
-
-		HANDLE thread_handle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, *it);
-		if (thread_handle == nullptr)
-			continue;
-
-		ResumeThread(thread_handle);
-
-		CloseHandle(thread_handle);
-	}
+	char szShader[256];
+	ID3DXBuffer *pShaderBuf = NULL;
+	D3DCAPS9 caps;
+	pDevice->GetDeviceCaps(&caps);
+	int PXSHVER1 = (D3DSHADER_VERSION_MAJOR(caps.PixelShaderVersion));
+	int PXSHVER2 = (D3DSHADER_VERSION_MINOR(caps.PixelShaderVersion));
+	if (setzBuf)
+		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0\nmov oDepth, c0.x", PXSHVER1, PXSHVER2, r, g, b, a);
+	else
+		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0", PXSHVER1, PXSHVER2, r, g, b, a);
+	D3DXAssembleShader(szShader, sizeof(szShader), NULL, NULL, 0, &pShaderBuf, NULL);
+	if (FAILED(pDevice->CreatePixelShader((const DWORD*)pShaderBuf->GetBufferPointer(), pShader)))return E_FAIL;
+	return S_OK;
 }
 */
+
