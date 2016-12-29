@@ -144,11 +144,15 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//dwDataCRC == cb415efe && dWidth == 12 && dHeight == 8 && dFormat == 894720068 && Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2
 	//dwDataCRC == d81bd7af && dWidth == 12 && dHeight == 8 && dFormat == 894720068 && Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2
 
+	//unkn
+	//dwDataCRC == 4ec9f327 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 66 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12
+	//dwDataCRC == 4ec9f327 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 68 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12
+
 	//wallhack
 	if ((wallhack > 0) && (Stride == 32 || Stride == 36)) //models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-		pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_NEVER);
+		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_NEVER);
 
 		//chams
 		if (wallhack == 3 && pSize != 164)
@@ -178,17 +182,18 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		}
 
 		pDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-		pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 	}
 
 	//aimbot
 	if(
-		(aimbot == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && dFormat == 894720068 && Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
-		(aimbot == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && dFormat == 894720068 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
-		(aimbot == 1 && dwDataCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && dFormat == 894720068 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //red near range
-		(aimbot == 1 && dwDataCRC == 0x337194bd && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 66 && primCount == 84)//red/orange near/mid range 5+kills (in training)
+		(aimbot == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
+		(aimbot == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
+		(aimbot == 1 && dwDataCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 66 && primCount == 84)|| //red near range
+		(aimbot == 1 && dwDataCRC == 0x337194bd && dWidth == 1024 && dHeight == 1024 && /*dFormat == 50 && */Stride == 12 && NumVertices == 66 && primCount == 84)//red/orange near/mid range 5+kills (in training)
 		//(aimbot == 1 && dwDataCRC != 0x2b7da9f4 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && primCount == 84)//orange mid range 5+kills (no)
 		//(aimbot == 1 && dwDataCRC == 0xd4461a08 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && primCount == 84)//orange mid range 5+kills (no)
+		//(aimbot == 1 && dwDataCRC == 0x6edbe8de && Stride == 12 && primCount == 84)
 		)
 		AddHPBarAim(pDevice, 1);
 
@@ -206,6 +211,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 	//remove, used for testing
 	//if(NumVertices != 96 && Stride == 12 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12)
+	//if(aimbot == 1 && dwDataCRC == 0xdb926e77)
 		//return D3D_OK; 
 	
 	
@@ -214,6 +220,8 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	{
 		//log hp bar crc with f10
 		if ((NumVertices != 96 && dwDataCRC != 0xad0d334b && Stride == 12 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12) && (GetAsyncKeyState(VK_F10) & 1))//hp
+		//if(dwDataCRC != 0x337194bd && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 36 && decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4) //outline shader
+		//if ((NumVertices != 96 && Stride == 8 && NumVertices == 8 && primCount == 10) && (GetAsyncKeyState(VK_F10) & 1))//t
 		Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 		//hold down P key until a texture changes, press I to log values of those textures
@@ -300,13 +308,13 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			//DrawString(pFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, Green, "%x", dwDataCRC);
 
 			//aimfov
-			float radiusx = (aimfov*5.0f) * (ScreenCenterX / 100);
-			float radiusy = (aimfov*5.0f) * (ScreenCenterY / 100);
+			float radiusx = (aimfov*10.0f) * (ScreenCenterX / 100); //(aimfov*5.0f)
+			float radiusy = (aimfov*10.0f) * (ScreenCenterY / 100); //(aimfov*5.0f)
 
 			if (aimfov == 0)
 			{
-				radiusx = 2.0f * (ScreenCenterX / 100);
-				radiusy = 2.0f * (ScreenCenterY / 100);
+				radiusx = 5.0f * (ScreenCenterX / 100);
+				radiusy = 5.0f * (ScreenCenterY / 100);
 			}
 
 			//get crosshairdistance
@@ -371,13 +379,13 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			//DrawString(pFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%x", dwDataCRC);
 
 			//aimfov
-			float radiusx = (aimfov*5.0f) * (ScreenCenterX / 100);
-			float radiusy = (aimfov*5.0f) * (ScreenCenterY / 100);
+			float radiusx = (aimfov*20.0f) * (ScreenCenterX / 100); //(aimfov*5.0f)
+			float radiusy = (aimfov*20.0f) * (ScreenCenterY / 100); //(aimfov*5.0f)
 
 			if (aimfov == 0)
 			{
-				radiusx = 2.0f * (ScreenCenterX / 100);
-				radiusy = 2.0f * (ScreenCenterY / 100);
+				radiusx = 10.0f * (ScreenCenterX / 100);
+				radiusy = 10.0f * (ScreenCenterY / 100);
 			}
 
 			//get crosshairdistance
@@ -610,7 +618,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 				//if (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE)
 				if (reinterpret_cast<IDirect3DTexture9 *>(pCurrentTexture)->GetType() == D3DRTYPE_TEXTURE)
-				if ((surfaceDesc.Width == 12 && surfaceDesc.Height == 8 && surfaceDesc.Format == 894720068 || surfaceDesc.Width == 1024 && surfaceDesc.Height == 1024 && surfaceDesc.Format == 50) && (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE))//reduce fps loss
+				//if ((surfaceDesc.Width == 12 && surfaceDesc.Height == 8 && surfaceDesc.Format == 894720068 || surfaceDesc.Width == 1024 && surfaceDesc.Height == 1024 && surfaceDesc.Format == 50) && (pCurrentTexture->GetType() == D3DRTYPE_TEXTURE))//
 				{
 					D3DLOCKED_RECT pLockedRect;
 
