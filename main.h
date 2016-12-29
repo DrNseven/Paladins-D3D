@@ -29,19 +29,19 @@ HMODULE dllHandle;
 UINT Stride;
 
 //elementcount
-D3DVERTEXELEMENT9 decl[MAXD3DDECLLENGTH];
-UINT numElements;
+//D3DVERTEXELEMENT9 decl[MAXD3DDECLLENGTH];
+//UINT numElements;
 
 //vertexshaderconstantf
 UINT mStartRegister;
 UINT mVector4fCount;
 
 //vdesc.Size
-D3DVERTEXBUFFER_DESC vdesc;
+//D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
-IDirect3DVertexShader9* vShader;
-UINT vSize;
+//IDirect3DVertexShader9* vShader;
+//UINT vSize;
 
 //pixelshader
 IDirect3DPixelShader9* pShader;
@@ -52,15 +52,15 @@ IDirect3DTexture9* pCurrentTexture = NULL;
 DWORD dwDataCRC;
 int dWidth;
 int dHeight;
-int dFormat;
+//int dFormat;
 
 D3DVIEWPORT9 Viewport; //use this viewport
 float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-bool logger = false;
-int countnum = 1;
+//bool logger = false;
+//int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -75,7 +75,6 @@ int aimfov = 6;					//aim field of view in %
 int aimheight = 2;				//aim height value for menu, low value = aims heigher, high values aims lower
 int aimheightxy = 0;			//real value, aimheight * 4 + 27
 //int useworldpos = 0;
-//int espfov = 90;				//esp fov in % 90
 
 //autoshoot settings
 int autoshoot = 1;
@@ -96,7 +95,7 @@ char* GetDirectoryFile(char *filename)
 	strcat_s(path, filename);
 	return path;
 }
-
+/*
 void Log(const char *fmt, ...)
 {
 	if (!fmt)	return;
@@ -111,7 +110,7 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
-
+*/
 DWORD QuickChecksum(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
@@ -169,7 +168,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	//Device->GetViewport(&Viewport);
 
 	Device->GetVertexShaderConstantF(8, mvp, 4);//8mvp
-	//Device->GetVertexShaderConstantF(countnum, world, 4);//world 225, 240-243, 247-252, 240
+	//Device->GetVertexShaderConstantF(240, world, 4);//world 240-243, 247-252
 
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
@@ -250,7 +249,6 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 	D3DXMATRIX mvp, world;
 
 	Device->GetVertexShaderConstantF(6, mvp, 4);//mvp
-	//Device->GetVertexShaderConstantF(244, world, 4);//
 
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
