@@ -60,7 +60,7 @@ float ScreenCenterY;
 
 //logger
 bool logger = false;
-int countnum = -1;
+int countnum = 1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -178,7 +178,7 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	if (w > 0.01f)
 	{
-		aimheightxy = 27 + (aimheight * 2);//4
+		aimheightxy = (Viewport.Height / 50) + (aimheight * 3);//27 2
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -259,7 +259,7 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	if (w > 0.01f)
 	{
-		aimheightxy = 27 + (aimheight * 4);
+		aimheightxy = (Viewport.Height / 50) + (aimheight * 5);//27 4
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -661,12 +661,11 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 
 // menu part
 char *opt_OnOff[] = { "[OFF]", "[On]" };
-char *opt_Occlusion[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Mode 1]", "[Mode 2]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
-char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", };
-char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]" };
+char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", "[20]" };
+char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]" };
 char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%]", "[70%]", "[80%]", "[90%]" };
 char *opt_Autoshoot[] = { "[OFF]", "[OnKeyDown]" };
 
@@ -700,12 +699,12 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		Current = 1;
 		//Category(pDevice, " [D3D]");
 		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
-		AddItem(pDevice, " Occlusion", occlusion, opt_Occlusion, 1);
+		AddItem(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 3);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
-		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 18);
+		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 19);
 		AddItem(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
-		AddItem(pDevice, " Aimheight", aimheight, opt_Aimheight, 9);
+		AddItem(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
 		//AddItem(pDevice, " UseWorldPos", useworldpos, opt_OnOff, 1);
 		AddItem(pDevice, " Autoshoot", autoshoot, opt_Autoshoot, 1);
 

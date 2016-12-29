@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.2g by Nseven
+* Paladins D3D Hack Source V1.2h by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -279,18 +279,18 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	{
 		//pDevice->GetViewport(&Viewport);
 		BuildMenu(pDevice);
-	}
 
-	//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
-	if (aimkey == 0) Daimkey = 0;
-	if (aimkey == 1) Daimkey = VK_SHIFT;
-	if (aimkey == 2) Daimkey = VK_RBUTTON;
-	if (aimkey == 3) Daimkey = VK_LBUTTON;
-	if (aimkey == 4) Daimkey = VK_CONTROL;
-	if (aimkey == 5) Daimkey = VK_MENU;
-	if (aimkey == 6) Daimkey = VK_SPACE;
-	if (aimkey == 7) Daimkey = 0x58; //X
-	if (aimkey == 8) Daimkey = 0x43; //C
+		//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
+		if (aimkey == 0) Daimkey = 0;
+		if (aimkey == 1) Daimkey = VK_SHIFT;
+		if (aimkey == 2) Daimkey = VK_RBUTTON;
+		if (aimkey == 3) Daimkey = VK_LBUTTON;
+		if (aimkey == 4) Daimkey = VK_CONTROL;
+		if (aimkey == 5) Daimkey = VK_MENU;
+		if (aimkey == 6) Daimkey = VK_SPACE;
+		if (aimkey == 7) Daimkey = 0x58; //X
+		if (aimkey == 8) Daimkey = 0x43; //C
+	}
 
 
 	//aimbot part 2
