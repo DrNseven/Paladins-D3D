@@ -169,12 +169,6 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 		DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
-		//glow
-		if (wallhack == 2 && pSize == 136 && mStartRegister == 235) //hax shader (does not work for everyone)
-		{
-			pDevice->SetPixelShader(NULL);
-		}
-
 		if (wallhack == 3 && pSize != 164)
 		{
 			float sGreen[4] = { 0.0f, 0.5f, 0.0f, 0.0f };
@@ -275,20 +269,20 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 	if (pFont)
 	{
-		//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
-		if (aimkey == 0) Daimkey = 0;
-		if (aimkey == 1) Daimkey = VK_SHIFT;
-		if (aimkey == 2) Daimkey = VK_RBUTTON;
-		if (aimkey == 3) Daimkey = VK_LBUTTON;
-		if (aimkey == 4) Daimkey = VK_CONTROL;
-		if (aimkey == 5) Daimkey = VK_MENU;
-		if (aimkey == 6) Daimkey = VK_SPACE;
-		if (aimkey == 7) Daimkey = 0x58; //X
-		if (aimkey == 8) Daimkey = 0x43; //C
-
 		//pDevice->GetViewport(&Viewport);
 		BuildMenu(pDevice);
 	}
+
+	//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
+	if (aimkey == 0) Daimkey = 0;
+	if (aimkey == 1) Daimkey = VK_SHIFT;
+	if (aimkey == 2) Daimkey = VK_RBUTTON;
+	if (aimkey == 3) Daimkey = VK_LBUTTON;
+	if (aimkey == 4) Daimkey = VK_CONTROL;
+	if (aimkey == 5) Daimkey = VK_MENU;
+	if (aimkey == 6) Daimkey = VK_SPACE;
+	if (aimkey == 7) Daimkey = 0x58; //X
+	if (aimkey == 8) Daimkey = 0x43; //C
 
 
 	//aimbot part 2
