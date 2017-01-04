@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.2h by Nseven
+* Paladins D3D Hack Source V1.2i by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -30,9 +30,9 @@ typedef HRESULT(APIENTRY *SetStreamSource)(IDirect3DDevice9*, UINT, IDirect3DVer
 HRESULT APIENTRY SetStreamSource_hook(IDirect3DDevice9*, UINT, IDirect3DVertexBuffer9*, UINT, UINT);
 SetStreamSource SetStreamSource_orig = 0;
 
-//typedef HRESULT(APIENTRY *SetVertexDeclaration)(IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
-//HRESULT APIENTRY SetVertexDeclaration_hook(IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
-//SetVertexDeclaration SetVertexDeclaration_orig = 0;
+typedef HRESULT(APIENTRY *SetVertexDeclaration)(IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
+HRESULT APIENTRY SetVertexDeclaration_hook(IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
+SetVertexDeclaration SetVertexDeclaration_orig = 0;
 
 typedef HRESULT(APIENTRY *SetVertexShaderConstantF)(IDirect3DDevice9*, UINT, const float*, UINT);
 HRESULT APIENTRY SetVertexShaderConstantF_hook(IDirect3DDevice9*, UINT, const float*, UINT);
@@ -103,7 +103,7 @@ HRESULT APIENTRY SetVertexShaderConstantF_hook(LPDIRECT3DDEVICE9 pDevice, UINT S
 }
 
 //==========================================================================================================================
-/*
+
 HRESULT APIENTRY SetVertexDeclaration_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DVertexDeclaration9* pDecl)
 {
 	if (pDecl != NULL)
@@ -117,7 +117,7 @@ HRESULT APIENTRY SetVertexDeclaration_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DV
 
 	return SetVertexDeclaration_orig(pDevice, pDecl);
 }
-*/
+
 //==========================================================================================================================
 
 HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE Type, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
@@ -149,7 +149,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//dwDataCRC == 4ec9f327 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 68 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12
 
 	//wallhack
-	if ((wallhack > 0) && (Stride == 32 || Stride == 36)) //models
+	if ((wallhack > 0) && (decl->Type == 5 && numElements == 11) || (Stride == 32 || Stride == 36)) //models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
 		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_NEVER);
@@ -253,7 +253,20 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		//GenerateShader(pDevice, &shadRed, 1.0f, 0.0f, 0.0f, 1.0f, true); //true = 0depth shader (wallhacked)
 		//GenerateShader(pDevice, &shadGreen, 0.0f, 1.0f, 0.0f, 1.0f, true);
 
+		//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
+		if (aimkey == 0) Daimkey = 0;
+		if (aimkey == 1) Daimkey = VK_SHIFT;
+		if (aimkey == 2) Daimkey = VK_RBUTTON;
+		if (aimkey == 3) Daimkey = VK_LBUTTON;
+		if (aimkey == 4) Daimkey = VK_CONTROL;
+		if (aimkey == 5) Daimkey = VK_MENU;
+		if (aimkey == 6) Daimkey = VK_SPACE;
+		if (aimkey == 7) Daimkey = 0x58; //X
+		if (aimkey == 8) Daimkey = 0x43; //C
+
 		LoadSettings();
+
+		//wallhack = Load("Wallhack", "Wallhack", wallhack, GetDirectoryFile("palasettings.ini"));
 
 		DoInit = false;
 	}
@@ -269,23 +282,10 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 	if (pFont)
 	{
-		//pDevice->GetViewport(&Viewport);
 		BuildMenu(pDevice);
 	}
 
-	//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
-	if (aimkey == 0) Daimkey = 0;
-	if (aimkey == 1) Daimkey = VK_SHIFT;
-	if (aimkey == 2) Daimkey = VK_RBUTTON;
-	if (aimkey == 3) Daimkey = VK_LBUTTON;
-	if (aimkey == 4) Daimkey = VK_CONTROL;
-	if (aimkey == 5) Daimkey = VK_MENU;
-	if (aimkey == 6) Daimkey = VK_SPACE;
-	if (aimkey == 7) Daimkey = 0x58; //X
-	if (aimkey == 8) Daimkey = 0x43; //C
-
-
-	//aimbot part 2
+	//aimbot 1 part 2
 	if (aimbot == 1 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
 	//if (aimbot == 1 && AimHPBarInfo.size() != NULL)
 	{
@@ -328,7 +328,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 		//if nearest target to crosshair
-		if (BestTarget != -1)
+		if (BestTarget != -1 && AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
 		{
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -356,7 +356,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 
-	//aimbot part 2
+	//aimbot 2 part 2
 	if (aimbot >= 2 && AimTBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
 	//if (aimbot > 0 && AimTBarInfo.size() != NULL)
 	{
@@ -399,7 +399,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 		//if nearest target to crosshair
-		if (BestTarget != -1)
+		if (BestTarget != -1 && AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
 		{
 			double DistX = AimTBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimTBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -638,6 +638,15 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 {
+	HWND GameHWND = NULL;
+	while (!GameHWND)
+	{
+		GameHWND = FindWindowA(0, "Chaos (32-bit, DX9)"); //avoid inj i.s.o.g
+		//GameHWND = FindWindowW(0, L"Chaos (32-bit, DX9)");
+		Sleep(100);
+	}
+	CloseHandle(GameHWND);
+
 	HMODULE hDLL = NULL;
 	while (!hDLL)
 	{
@@ -645,7 +654,6 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 		Sleep(100);
 	}
 	CloseHandle(hDLL);
-
 
 	IDirect3D9* d3d = NULL;
 	IDirect3DDevice9* d3ddev = NULL;
@@ -715,8 +723,8 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	if (MH_EnableHook((DWORD_PTR*)dVtable[42]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[100], &SetStreamSource_hook, reinterpret_cast<void**>(&SetStreamSource_orig)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dVtable[100]) != MH_OK) { return 1; }
-	//if (MH_CreateHook((DWORD_PTR*)dVtable[87], &SetVertexDeclaration_hook, reinterpret_cast<void**>(&SetVertexDeclaration_orig)) != MH_OK) { return 1; }
-	//if (MH_EnableHook((DWORD_PTR*)dVtable[87]) != MH_OK) { return 1; }
+	if (MH_CreateHook((DWORD_PTR*)dVtable[87], &SetVertexDeclaration_hook, reinterpret_cast<void**>(&SetVertexDeclaration_orig)) != MH_OK) { return 1; }
+	if (MH_EnableHook((DWORD_PTR*)dVtable[87]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[94], &SetVertexShaderConstantF_hook, reinterpret_cast<void**>(&SetVertexShaderConstantF_orig)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dVtable[94]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dVtable[82], &DrawIndexedPrimitive_hook, reinterpret_cast<void**>(&DrawIndexedPrimitive_orig)) != MH_OK) { return 1; }

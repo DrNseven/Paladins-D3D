@@ -29,8 +29,8 @@ HMODULE dllHandle;
 UINT Stride;
 
 //elementcount
-//D3DVERTEXELEMENT9 decl[MAXD3DDECLLENGTH];
-//UINT numElements;
+D3DVERTEXELEMENT9 decl[MAXD3DDECLLENGTH];
+UINT numElements;
 
 //vertexshaderconstantf
 UINT mStartRegister;
@@ -342,24 +342,25 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 // Name: Save()
 // Desc: Saves Menu Item states for later Restoration
 //-----------------------------------------------------------------------------
-
-//void Save(char* szSection, char* szKey, int iValue, LPCSTR file)
-//{
-//char szValue[255];
-//sprintf_s(szValue, "%d", iValue);
-//WritePrivateProfileString(szSection, szKey, szValue, file);
-//}
-
+/*
+void Save(char* szSection, char* szKey, int iValue, LPCSTR file)
+{
+char szValue[255];
+sprintf_s(szValue, "%d", iValue);
+WritePrivateProfileString(szSection, szKey, szValue, file);
+}
+*/
 //-----------------------------------------------------------------------------
 // Name: Load()
 // Desc: Loads Menu Item States From Previously Saved File
 //-----------------------------------------------------------------------------
-
-//int Load(char* szSection, char* szKey, int iDefaultValue, LPCSTR file)
-//{
-//int iResult = GetPrivateProfileInt(szSection, szKey, iDefaultValue, file);
-//return iResult;
-//}
+/*
+int Load(char* szSection, char* szKey, int iDefaultValue, LPCSTR file)
+{
+int iResult = GetPrivateProfileInt(szSection, szKey, iDefaultValue, file);
+return iResult;
+}
+*/
 
 #include <string>
 #include <fstream>
@@ -675,10 +676,23 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 
 		//save settings
 		SaveSettings();
+
+		//Save("Wallhack", "Wallhack", wallhack, GetDirectoryFile("palasettings.ini"));
 	}
 
 	if (Show && pFont)
 	{
+		//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
+		if (aimkey == 0) Daimkey = 0;
+		if (aimkey == 1) Daimkey = VK_SHIFT;
+		if (aimkey == 2) Daimkey = VK_RBUTTON;
+		if (aimkey == 3) Daimkey = VK_LBUTTON;
+		if (aimkey == 4) Daimkey = VK_CONTROL;
+		if (aimkey == 5) Daimkey = VK_MENU;
+		if (aimkey == 6) Daimkey = VK_SPACE;
+		if (aimkey == 7) Daimkey = 0x58; //X
+		if (aimkey == 8) Daimkey = 0x43; //C
+
 		if (GetAsyncKeyState(VK_UP) & 1)
 			MenuSelection--;
 
