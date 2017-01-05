@@ -729,10 +729,10 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 			ColorText = ItemCurrent;
 
 
-		WriteText(PosX + 44, PosY+50 + (Current * 15) - 1, Grey, text);
+		WriteText(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
 		WriteText(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
 
-		lWriteText(PosX + 236, PosY+50 + (Current * 15) - 1, Grey, opt[var]);
+		lWriteText(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
 		lWriteText(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
 		Current++;
 	}
@@ -1287,13 +1287,11 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 
 		//draw background
 		FillRGB(pDevice, 71, 64, 200, 172, TBlack);
-
+		DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
+		DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
+		cWriteText(170, 71, White, "Paladins D3D");
 		//draw menu pic
 		PrePresent(pDevice, 20, 20);
-
-		//DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
-		cWriteText(170, 71, White, "Paladins D3D");
-		//DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
 
 		Current = 1;
 		//Category(pDevice, " [D3D]");
