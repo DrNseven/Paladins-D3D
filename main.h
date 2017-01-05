@@ -59,8 +59,8 @@ float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-//bool logger = false;
-//int countnum = -1;
+bool logger = false;
+int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -74,6 +74,7 @@ int aimsens = 3;				//aim sensitivity, makes aim smoother
 int aimfov = 6;					//aim field of view in % 
 int aimheight = 2;				//aim height value for menu, low value = aims heigher, high values aims lower
 int aimheightxy = 0;			//real value, aimheight * 4 + 27
+int esp = 1;					//anim pic esp
 //int useworldpos = 0;
 
 //autoshoot settings
@@ -83,6 +84,14 @@ bool IsPressed = false;			//
 
 //timer
 DWORD frametime = timeGetTime();
+
+
+//sprite
+D3DXVECTOR3 ImagePos0;
+
+//sprite timer
+DWORD dwStartTime0 = 0; //time as the timer started
+DWORD dwTime0 = 0; //windowsuptime
 
 //==========================================================================================================================
 
@@ -95,7 +104,7 @@ char* GetDirectoryFile(char *filename)
 	strcat_s(path, filename);
 	return path;
 }
-/*
+
 void Log(const char *fmt, ...)
 {
 	if (!fmt)	return;
@@ -110,7 +119,7 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
-*/
+
 DWORD QuickChecksum(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
@@ -203,6 +212,73 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 		//AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0] + (Viewport.Width*0.5f)), static_cast<float>(to[1] + (Viewport.Height*0.5f)), iTeam };
 		AimHPBarInfo_t pAimHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
 		AimHPBarInfo.push_back(pAimHPBarInfo);
+}
+
+struct EspHPBarInfo_t
+{
+	float vOutX, vOutY;
+	INT       iTeam;
+	float CrosshairDistance;
+};
+std::vector<EspHPBarInfo_t>EspHPBarInfo;
+//float RealDistance;
+
+// Parameters:
+//
+//   float4 mvp[4];
+//
+//
+// Registers:
+//
+//   Name         Reg   Size
+//   ------------ ----- ----
+//   mvp          c8       4
+//w2s for health bars
+void AddHPBarEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
+{
+	D3DXVECTOR3 from, to;
+	D3DXMATRIX mvp, world;
+
+	//not here
+	//D3DVIEWPORT9 Viewport;
+	//Device->GetViewport(&Viewport);
+
+	Device->GetVertexShaderConstantF(8, mvp, 4);//8mvp
+	Device->GetVertexShaderConstantF(240, world, 4);//world 240-243, 247-252
+
+	float w = 0.0f;
+	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
+	to[1] = mvp[4] * world._14 + mvp[5] * world._24 + mvp[6] * world._34 + mvp[7];
+	w = mvp[12] * world._14 + mvp[13] * world._24 + mvp[14] * world._34 + mvp[15];
+
+	if (w > 0.01f)
+	{
+		aimheightxy = (Viewport.Height / 50) + (aimheight * 3);//27 2
+
+		float invw = 1.0f / w;
+		to[0] *= invw;
+		to[1] *= invw;
+
+		float x = Viewport.Width / 2.0f;
+		float y = Viewport.Height / 2.0f;
+
+		x += 0.5f * to[0] * Viewport.Width + 0.5f;
+		y -= 0.5f * to[1] * Viewport.Height - aimheightxy;
+		to[0] = x + Viewport.X;
+		to[1] = y + Viewport.Y;
+	}
+	else
+	{
+		to[0] = -1.0f;
+		to[1] = -1.0f;
+	}
+
+	//to[0] = X
+	//to[1] = Y
+
+	//EspHPBarInfo_t pEspHPBarInfo = { static_cast<float>(to[0] + (Viewport.Width*0.5f)), static_cast<float>(to[1] + (Viewport.Height*0.5f)), iTeam };
+	EspHPBarInfo_t pEspHPBarInfo = { static_cast<float>(to[0]), static_cast<float>(to[1]), iTeam };
+	EspHPBarInfo.push_back(pEspHPBarInfo);
 
 	/*
 	//esp
@@ -370,6 +446,7 @@ void SaveSettings()
 	fout.open(GetDirectoryFile("palasettings.ini"), ios::trunc);
 	fout << "Wallhack " << wallhack << endl;
 	fout << "Occlusion " << occlusion << endl;
+	fout << "Esp " << esp << endl;
 	fout << "Aimbot " << aimbot << endl;
 	fout << "Aimkey " << aimkey << endl;
 	fout << "Aimsens " << aimsens << endl;
@@ -387,6 +464,7 @@ void LoadSettings()
 	fin.open(GetDirectoryFile("palasettings.ini"), ifstream::in);
 	fin >> Word >> wallhack;
 	fin >> Word >> occlusion;
+	fin >> Word >> esp;
 	fin >> Word >> aimbot;
 	fin >> Word >> aimkey;
 	fin >> Word >> aimsens;
@@ -586,7 +664,7 @@ void Category(LPDIRECT3DDEVICE9 pDevice, char *text)
 {
 	if (Show)
 	{
-		int Check = CheckTabs(PosX, PosY + (Current * 15), 190, 10);
+		int Check = CheckTabs(PosX+44, (PosY+51) + (Current * 15), 190, 10);
 		DWORD ColorText;
 
 		ColorText = KategorieFarbe;
@@ -597,8 +675,8 @@ void Category(LPDIRECT3DDEVICE9 pDevice, char *text)
 		if (MenuSelection == Current)
 			ColorText = ItemCurrent;
 
-		WriteText(PosX - 5, PosY + (Current * 15) - 1, ColorText, text);
-		lWriteText(PosX + 175, PosY + (Current * 15) - 1, ColorText, "[-]");
+		WriteText(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
+		lWriteText(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
 		Current++;
 	}
 }
@@ -607,17 +685,17 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 {
 	if (Show)
 	{
-		int Check = CheckTabs(PosX, PosY + (Current * 15), 190, 10);
+		int Check = CheckTabs(PosX+44, (PosY+51) + (Current * 15), 190, 10);
 		DWORD ColorText;
 
 		if (var)
 		{
-			DrawBox(pDevice, PosX, PosY + (Current * 15), 10, 10, Green);
+			//DrawBox(pDevice, PosX+44, PosY+51 + (Current * 15), 10, 10, Green);
 			ColorText = ItemColorOn;
 		}
 		if (var == 0)
 		{
-			DrawBox(pDevice, PosX, PosY + (Current * 15), 10, 10, Red);
+			//DrawBox(pDevice, PosX+44, PosY+51 + (Current * 15), 10, 10, Red);
 			ColorText = ItemColorOff;
 		}
 
@@ -650,13 +728,519 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 		if (MenuSelection == Current)
 			ColorText = ItemCurrent;
 
-		WriteText(PosX + 13, PosY + (Current * 15) - 1, ColorText, text);
-		lWriteText(PosX + 148, PosY + (Current * 15) - 1, ColorText, opt[var]);
+
+		WriteText(PosX + 44, PosY+50 + (Current * 15) - 1, Grey, text);
+		WriteText(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
+
+		lWriteText(PosX + 236, PosY+50 + (Current * 15) - 1, Grey, opt[var]);
+		lWriteText(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
 		Current++;
 	}
 }
 
 //=====================================================================================================================
+
+LPD3DXSPRITE lpSprite0, lpSprite1, lpSprite2, lpSprite3, lpSprite4, lpSprite5, lpSprite6, lpSprite7, lpSprite8, lpSprite9, lpSprite10, lpSprite11, lpSprite12, lpSprite13 = NULL; //menu
+LPD3DXSPRITE lpEsp0, lpEsp1, lpEsp2, lpEsp3, lpEsp4, lpEsp5, lpEsp6, lpEsp7, lpEsp8, lpEsp9, lpEsp10, lpEsp11, lpEsp12, lpEsp13, lpEsp14 = NULL; //esp
+LPDIRECT3DTEXTURE9 lpSpriteImage0, lpSpriteImage1, lpSpriteImage2, lpSpriteImage3, lpSpriteImage4, lpSpriteImage5, lpSpriteImage6, lpSpriteImage7, lpSpriteImage8, lpSpriteImage9, lpSpriteImage10, lpSpriteImage11, lpSpriteImage12, lpSpriteImage13, lpSpriteImage14 = NULL; //menu
+LPDIRECT3DTEXTURE9 lpEspImage0, lpEspImage1, lpEspImage2, lpEspImage3, lpEspImage4, lpEspImage5, lpEspImage6, lpEspImage7, lpEspImage8, lpEspImage9, lpEspImage10, lpEspImage11, lpEspImage12, lpEspImage13, lpEspImage14, lpEspImage15 = NULL; //esp
+bool bSpriteCreated1, bSpriteCreated2 = false;
+
+bool CreateOverlaySprite(IDirect3DDevice9* pd3dDevice)
+{
+	HRESULT hr;
+
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\menu\\Menu0.png"), &lpSpriteImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame1.png"), &lpSpriteImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame2.png"), &lpSpriteImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame3.png"), &lpSpriteImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame4.png"), &lpSpriteImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame5.png"), &lpSpriteImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame6.png"), &lpSpriteImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame7.png"), &lpSpriteImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame8.png"), &lpSpriteImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame9.png"), &lpSpriteImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame10.png"), &lpSpriteImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame11.png"), &lpSpriteImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame12.png"), &lpSpriteImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame13.png"), &lpSpriteImage13);
+
+	if (FAILED(hr))
+	{
+		//Log("D3DXCreateTextureFromFile failed");
+		bSpriteCreated1 = false;
+		return false;
+	}
+
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite0);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite1);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite2);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite3);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite4);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite5);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite6);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite7);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite8);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite9);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite10);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite11);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite12);
+	hr = D3DXCreateSprite(pd3dDevice, &lpSprite13);
+
+	if (FAILED(hr))
+	{
+		//Log("D3DXCreateSprite1 failed");
+		bSpriteCreated1 = false;
+		return false;
+	}
+
+	bSpriteCreated1 = true;
+
+	return true;
+}
+
+bool CreateOverlaySprite2(IDirect3DDevice9* pd3dDevice)
+{
+	HRESULT hr;
+
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
+
+	if (FAILED(hr))
+	{
+		//Log("D3DXCreateTextureFromFile failed");
+		bSpriteCreated2 = false;
+		return false;
+	}
+
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp0);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp1);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp2);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp3);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp4);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp5);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp6);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp7);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp8);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp9);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp10);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp11);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp12);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp13);
+	hr = D3DXCreateSprite(pd3dDevice, &lpEsp14);
+
+	if (FAILED(hr))
+	{
+		//Log("D3DXCreateSprite2 failed");
+		bSpriteCreated2 = false;
+		return false;
+	}
+
+	bSpriteCreated2 = true;
+
+	return true;
+}
+
+// COM utils
+template<class COMObject>
+void SafeRelease(COMObject*& pRes)
+{
+	IUnknown *unknown = pRes;
+	if (unknown)
+	{
+		unknown->Release();
+	}
+	pRes = NULL;
+}
+
+// This will get called before Device::Clear(). If the device has been reset
+// then all the work surfaces will be created again.
+void PreClear(IDirect3DDevice9* device)
+{
+	if (!bSpriteCreated1)
+		CreateOverlaySprite(device);
+
+	if (!bSpriteCreated2)
+		CreateOverlaySprite2(device);
+}
+
+// Delete work surfaces when device gets reset
+void DeleteRenderSurfaces()
+{
+	if (lpSprite0 != NULL)
+	{
+		//Log("SafeRelease(lpSprite)");
+		SafeRelease(lpSprite0);
+		SafeRelease(lpSprite1);
+		SafeRelease(lpSprite2);
+		SafeRelease(lpSprite3);
+		SafeRelease(lpSprite4);
+		SafeRelease(lpSprite5);
+		SafeRelease(lpSprite6);
+		SafeRelease(lpSprite7);
+		SafeRelease(lpSprite8);
+		SafeRelease(lpSprite9);
+		SafeRelease(lpSprite10);
+		SafeRelease(lpSprite11);
+		SafeRelease(lpSprite12);
+		SafeRelease(lpSprite13);
+	}
+
+	if (lpEsp0 != NULL)
+	{
+		//Log("SafeRelease(lpEsp)");
+		SafeRelease(lpEsp0);
+		SafeRelease(lpEsp1);
+		SafeRelease(lpEsp2);
+		SafeRelease(lpEsp3);
+		SafeRelease(lpEsp4);
+		SafeRelease(lpEsp5);
+		SafeRelease(lpEsp6);
+		SafeRelease(lpEsp7);
+		SafeRelease(lpEsp8);
+		SafeRelease(lpEsp9);
+		SafeRelease(lpEsp10);
+		SafeRelease(lpEsp11);
+		SafeRelease(lpEsp12);
+		SafeRelease(lpEsp13);
+		SafeRelease(lpEsp14);
+	}
+
+	bSpriteCreated1 = false;
+	bSpriteCreated2 = false;
+}
+
+// This gets called right before the frame is presented on-screen - Device::Present().
+// First, create the display text, FPS and info message, on-screen. Then then call
+// CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
+void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
+{
+	int textOffsetLeft;
+
+	//draw sprite
+	if (bSpriteCreated1)
+	{
+		if (lpSprite0 != NULL)
+		{
+			D3DXVECTOR3 position;
+			position.x = (float)cx;
+			position.y = (float)cy;
+			position.z = 0.0f;
+
+			textOffsetLeft = (int)position.x; //for later to offset text from image
+
+			//lpSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+			//lpSprite1->Draw(lpSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+			//lpSprite1->End();
+
+			position.x = 20.0f; //79.0f;
+			position.y = 20.0f;
+			position.z = 0.0f;
+
+			//menu background scale
+			D3DXMATRIX scaleMatrix0;
+			D3DXMATRIX transMatrix0;
+			D3DXMatrixScaling(&scaleMatrix0, 1.0f, 0.6f, 1.0f);
+			D3DXMatrixTranslation(&transMatrix0, position.x, position.y, position.z);
+			D3DXMatrixMultiply(&transMatrix0, &scaleMatrix0, &transMatrix0);
+
+			//draw menu background pic
+			lpSprite0->SetTransform(&transMatrix0);
+			lpSprite0->Begin(D3DXSPRITE_ALPHABLEND);
+			lpSprite0->Draw(lpSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
+			lpSprite0->End();
+
+			//anim timer
+			dwTime0 = GetTickCount() / 60;//50 speed
+
+			//setting the starttime in ms
+			if (dwTime0 - dwStartTime0 > 12)
+				dwStartTime0 = GetTickCount() / 60;
+
+			position.x = 49.0f; //76.0f;
+			position.y = 119.0f;
+			position.z = 0.0f;
+
+			//animation scale
+			D3DXMATRIX scaleMatrix;
+			D3DXMATRIX transMatrix;
+			D3DXMatrixScaling(&scaleMatrix, 1.51f, 0.755f, 1.0f);
+			D3DXMatrixTranslation(&transMatrix, ImagePos0.x, ImagePos0.y, ImagePos0.z);
+			D3DXMatrixMultiply(&transMatrix, &scaleMatrix, &transMatrix);
+
+			//draw animation foreground pics
+			if (dwTime0 - dwStartTime0 == 0)
+			{
+				lpSprite1->SetTransform(&transMatrix);
+				lpSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite1->Draw(lpSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite1->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 1)
+			{
+				lpSprite2->SetTransform(&transMatrix);
+				lpSprite2->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite2->Draw(lpSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite2->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 2)
+			{
+				lpSprite3->SetTransform(&transMatrix);
+				lpSprite3->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite3->Draw(lpSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite3->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 3)
+			{
+				lpSprite4->SetTransform(&transMatrix);
+				lpSprite4->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite4->Draw(lpSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite4->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 4)
+			{
+				lpSprite5->SetTransform(&transMatrix);
+				lpSprite5->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite5->Draw(lpSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite5->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 5)
+			{
+				lpSprite6->SetTransform(&transMatrix);
+				lpSprite6->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite6->Draw(lpSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite6->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 6)
+			{
+				lpSprite7->SetTransform(&transMatrix);
+				lpSprite7->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite7->Draw(lpSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite7->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 7)
+			{
+				lpSprite8->SetTransform(&transMatrix);
+				lpSprite8->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite8->Draw(lpSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite8->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 8)
+			{
+				lpSprite9->SetTransform(&transMatrix);
+				lpSprite9->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite9->Draw(lpSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite9->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 9)
+			{
+				lpSprite10->SetTransform(&transMatrix);
+				lpSprite10->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite10->Draw(lpSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite10->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 10)
+			{
+				lpSprite11->SetTransform(&transMatrix);
+				lpSprite11->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite11->Draw(lpSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite11->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 11)
+			{
+				lpSprite12->SetTransform(&transMatrix);
+				lpSprite12->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite12->Draw(lpSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite12->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 12)
+			{
+				lpSprite13->SetTransform(&transMatrix);
+				lpSprite13->Begin(D3DXSPRITE_ALPHABLEND);
+				lpSprite13->Draw(lpSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
+				lpSprite13->End();
+			}
+		}
+	}
+
+	// draw text
+}
+
+void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
+{
+	int textOffsetLeft;
+
+	//draw sprite
+	if (bSpriteCreated2)
+	{
+		if (lpEsp0 != NULL)
+		{
+			D3DXVECTOR3 position;
+			position.x = (float)cx;
+			position.y = (float)cy;
+			position.z = 0.0f;
+
+			textOffsetLeft = (int)position.x; //for later to offset text from image
+
+
+			//draw esp background pic
+			//lpEsp0->SetTransform(&transMatrix0);
+			lpEsp0->Begin(D3DXSPRITE_ALPHABLEND);
+			lpEsp0->Draw(lpEspImage0, NULL, NULL, &position, 0xFFFFFFFF);
+			lpEsp0->End();
+
+			//anim timer
+			dwTime0 = GetTickCount() / 60;//50 speed
+
+			//setting the starttime in ms
+			if (dwTime0 - dwStartTime0 > 13)
+				dwStartTime0 = GetTickCount() / 60;
+
+
+			//draw animation foreground pics
+			if (dwTime0 - dwStartTime0 == 0)
+			{
+				//lpEsp1->SetTransform(&transMatrix);
+				lpEsp1->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp1->Draw(lpEspImage1, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp1->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 1)
+			{
+				//lpEsp2->SetTransform(&transMatrix);
+				lpEsp2->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp2->Draw(lpEspImage2, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp2->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 2)
+			{
+				//lpEsp3->SetTransform(&transMatrix);
+				lpEsp3->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp3->Draw(lpEspImage3, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp3->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 3)
+			{
+				//lpEsp4->SetTransform(&transMatrix);
+				lpEsp4->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp4->Draw(lpEspImage4, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp4->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 4)
+			{
+				//lpEsp5->SetTransform(&transMatrix);
+				lpEsp5->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp5->Draw(lpEspImage5, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp5->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 5)
+			{
+				//lpEsp6->SetTransform(&transMatrix);
+				lpEsp6->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp6->Draw(lpEspImage6, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp6->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 6)
+			{
+				//lpEsp7->SetTransform(&transMatrix);
+				lpEsp7->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp7->Draw(lpEspImage7, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp7->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 7)
+			{
+				//lpEsp8->SetTransform(&transMatrix);
+				lpEsp8->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp8->Draw(lpEspImage8, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp8->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 8)
+			{
+				//lpEsp9->SetTransform(&transMatrix);
+				lpEsp9->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp9->Draw(lpEspImage9, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp9->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 9)
+			{
+				//lpEsp10->SetTransform(&transMatrix);
+				lpEsp10->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp10->Draw(lpEspImage10, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp10->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 10)
+			{
+				//lpEsp11->SetTransform(&transMatrix);
+				lpEsp11->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp11->Draw(lpEspImage11, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp11->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 11)
+			{
+				//lpEsp12->SetTransform(&transMatrix);
+				lpEsp12->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp12->Draw(lpEspImage12, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp12->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 12)
+			{
+				//lpEsp13->SetTransform(&transMatrix);
+				lpEsp13->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp13->Draw(lpEspImage13, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp13->End();
+			}
+
+			if (dwTime0 - dwStartTime0 == 13)
+			{
+				//lpEsp14->SetTransform(&transMatrix);
+				lpEsp14->Begin(D3DXSPRITE_ALPHABLEND);
+				lpEsp14->Draw(lpEspImage14, NULL, NULL, &position, 0xFFFFFFFF);
+				lpEsp14->End();
+			}
+		}
+	}
+
+	// draw text
+}
+
+//==========================================================================================================================
 
 // menu part
 char *opt_OnOff[] = { "[OFF]", "[On]" };
@@ -678,6 +1262,8 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		SaveSettings();
 
 		//Save("Wallhack", "Wallhack", wallhack, GetDirectoryFile("palasettings.ini"));
+
+		PlaySoundA(GetDirectoryFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 	}
 
 	if (Show && pFont)
@@ -700,18 +1286,20 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 			MenuSelection++;
 
 		//draw background
-		FillRGB(pDevice, 20, 16, 168, 152, TBlack);
-		//draw menu pic
-		//PrePresent(pDevice, 40, 26);
+		FillRGB(pDevice, 71, 64, 200, 172, TBlack);
 
-		DrawBox(pDevice, 20, 15, 168, 20, DarkOutline);
-		cWriteText(104, 18, White, "Paladins D3D");
-		DrawBox(pDevice, 20, 34, 168, Current * 15, DarkOutline);
+		//draw menu pic
+		PrePresent(pDevice, 20, 20);
+
+		//DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
+		cWriteText(170, 71, White, "Paladins D3D");
+		//DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
 
 		Current = 1;
 		//Category(pDevice, " [D3D]");
 		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
 		AddItem(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
+		AddItem(pDevice, " Esp", esp, opt_OnOff, 1);
 		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 3);
 		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
 		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 19);
@@ -723,11 +1311,11 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		//if (MenuSelection >= Current)
 			//MenuSelection = 1;
 
-		if (MenuSelection > 8)
+		if (MenuSelection > 9)
 			MenuSelection = 1;//Current;
 
 		if (MenuSelection < 1)
-			MenuSelection = 8;//Current;
+			MenuSelection = 9;//Current;
 	}
 }
 

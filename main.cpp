@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.2i by Nseven
+* Paladins D3D Hack Source V1.3alpha by Nseven
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -197,6 +197,13 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//compatibility
 	if (aimbot == 3 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
 		AddTBarAim(pDevice, 1);
+
+	if (
+		(esp == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
+		(esp == 1 && dwDataCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
+		(esp == 1 && dwDataCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && /*dFormat == 894720068 && */Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
+		)
+		AddHPBarEsp(pDevice, 1);
 	
 
 	//crosshair
@@ -211,10 +218,10 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	if (logger)
 	{
 		//log hp bar crc with f10
-		if ((NumVertices != 96 && dwDataCRC != 0xad0d334b && Stride == 12 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12) && (GetAsyncKeyState(VK_F10) & 1))//hp
+		//if ((NumVertices != 96 && dwDataCRC != 0xad0d334b && Stride == 12 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12) && (GetAsyncKeyState(VK_F10) & 1))//hp
 		//if(dwDataCRC != 0x337194bd && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 36 && decl->Type == 5 && numElements == 11 && vSize == 1216 && pSize == 164 && mStartRegister == 231 && mVector4fCount == 4) //outline shader
 		//if ((NumVertices != 96 && Stride == 8 && NumVertices == 8 && primCount == 10) && (GetAsyncKeyState(VK_F10) & 1))//t
-		Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		//Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 		//hold down P key until a texture changes, press I to log values of those textures
 		if (GetAsyncKeyState('O') & 1) //-
@@ -223,13 +230,13 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 			countnum++;
 		if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
 			countnum = -1;
-		if (countnum == pSize)
-			if ((Stride > NULL) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
-				Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		//if (countnum == pSize)
+			//if ((Stride > NULL) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
+				//Log("dwDataCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", dwDataCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 		if (countnum == pSize)
 		{
-			pDevice->SetPixelShader(NULL);
-			return D3D_OK; //delete texture
+			//pDevice->SetPixelShader(NULL);
+			//return D3D_OK; //delete texture
 		}
 	}
 	*/
@@ -245,7 +252,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	if (pDevice == nullptr) return EndScene_orig(pDevice);
 
 	//sprite
-	//PreClear(pDevice);
+	PreClear(pDevice);
 
 	if (DoInit)
 	{
@@ -273,7 +280,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 	if (pFont == NULL)
 	{
-		HRESULT hr = D3DXCreateFont(pDevice, 13, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &pFont);
+		HRESULT hr = D3DXCreateFont(pDevice, 14, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &pFont);
 
 		if (FAILED(hr)) {
 			//Log("D3DXCreateFont failed");
@@ -284,6 +291,21 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	{
 		BuildMenu(pDevice);
 	}
+
+
+	//esp part 2
+	if (esp == 1 && EspHPBarInfo.size() != NULL)
+	{
+		for (unsigned int i = 0; i < EspHPBarInfo.size(); i++)
+		{
+			//esp
+			if(EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1)
+			PrePresent2(pDevice, (int)EspHPBarInfo[i].vOutX - 32, (int)EspHPBarInfo[i].vOutY - 20);
+			//DrawString(pFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+		}
+	}
+	EspHPBarInfo.clear();
+
 
 	//aimbot 1 part 2
 	if (aimbot == 1 && AimHPBarInfo.size() != NULL && GetAsyncKeyState(Daimkey))
@@ -328,7 +350,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 		//if nearest target to crosshair
-		if (BestTarget != -1 && AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
+		if (BestTarget != -1) //&& AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
 		{
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -399,7 +421,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 
 		//if nearest target to crosshair
-		if (BestTarget != -1 && AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
+		if (BestTarget != -1) //&& AimTBarInfo[BestTarget].vOutX > 1 && AimTBarInfo[BestTarget].vOutY > 1)
 		{
 			double DistX = AimTBarInfo[BestTarget].vOutX - ScreenCenterX;
 			double DistY = AimTBarInfo[BestTarget].vOutY - ScreenCenterY;
@@ -540,7 +562,7 @@ HRESULT APIENTRY SetViewport_hook(IDirect3DDevice9* pDevice, CONST D3DVIEWPORT9*
 
 HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters)
 {
-	//DeleteRenderSurfaces();
+	DeleteRenderSurfaces();
 
 	if (pFont)
 		pFont->OnLostDevice();
@@ -641,11 +663,10 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	HWND GameHWND = NULL;
 	while (!GameHWND)
 	{
-		GameHWND = FindWindowA(0, "Chaos (32-bit, DX9)"); //avoid inj i.s.o.g
-		//GameHWND = FindWindowW(0, L"Chaos (32-bit, DX9)");
+		//Multi national version compatible 
+		GameHWND = FindWindowA("LaunchUnrealUWindowsClient", 0); //avoid inj i.s.o.g
 		Sleep(100);
 	}
-	CloseHandle(GameHWND);
 
 	HMODULE hDLL = NULL;
 	while (!hDLL)
