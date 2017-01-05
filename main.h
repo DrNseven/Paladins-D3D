@@ -59,8 +59,8 @@ float ScreenCenterX;
 float ScreenCenterY;
 
 //logger
-bool logger = false;
-int countnum = -1;
+//bool logger = false;
+//int countnum = -1;
 
 //features
 int wallhack = 1;				//wallhack
@@ -104,7 +104,7 @@ char* GetDirectoryFile(char *filename)
 	strcat_s(path, filename);
 	return path;
 }
-
+/*
 void Log(const char *fmt, ...)
 {
 	if (!fmt)	return;
@@ -119,7 +119,7 @@ void Log(const char *fmt, ...)
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
-
+*/
 DWORD QuickChecksum(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
@@ -1289,9 +1289,9 @@ void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
 		FillRGB(pDevice, 71, 64, 200, 172, TBlack);
 		DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
 		DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
-		cWriteText(170, 71, White, "Paladins D3D");
 		//draw menu pic
 		PrePresent(pDevice, 20, 20);
+		cWriteText(172, 71, White, "Paladins D3D");
 
 		Current = 1;
 		//Category(pDevice, " [D3D]");
