@@ -641,7 +641,8 @@ DWORD WINAPI DXInit(__in  LPVOID lpParameter)
 	HWND GameHWND = NULL;
 	while (!GameHWND)
 	{
-		GameHWND = FindWindowA(0, "Chaos (32-bit, DX9)"); //avoid inj i.s.o.g
+		//Multi national version compatible // PS: China "枪火游侠 (32-bit, DX9)"
+		GameHWND = FindWindowA("LaunchUnrealUWindowsClient", 0); //avoid inj i.s.o.g
 		//GameHWND = FindWindowW(0, L"Chaos (32-bit, DX9)");
 		Sleep(100);
 	}
