@@ -149,7 +149,7 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	//dwDataCRC == 4ec9f327 && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 68 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12
 
 	//wallhack
-	if ((wallhack > 0) && (decl->Type == 5 && numElements == 11) || (Stride == 32 || Stride == 36)) //models
+	if ((wallhack > 0 && decl->Type == 5 && numElements == 11) || (wallhack > 0 && Stride == 32 || Stride == 36)) //models
 	{
 		pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
 		//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_NEVER);
