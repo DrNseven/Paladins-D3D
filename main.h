@@ -23,7 +23,7 @@ using namespace std;
 
 //==========================================================================================================================
 
-HMODULE dllHandle;
+HMODULE WinHand;
 
 //Stride
 UINT Stride;
@@ -40,23 +40,24 @@ UINT mVector4fCount;
 //D3DVERTEXBUFFER_DESC vdesc;
 
 //vertexshader
-//IDirect3DVertexShader9* vShader;
-//UINT vSize;
+IDirect3DVertexShader9* vShader;
+UINT vSize;
 
 //pixelshader
 IDirect3DPixelShader9* pShader;
 UINT pSize;
 
 //texture crc
-IDirect3DTexture9* pCurrentTexture = NULL;
-DWORD dwDataCRC;
+IDirect3DTexture9* pCurrentTex = NULL;
+DWORD texCRC;
 int dWidth;
 int dHeight;
-//int dFormat;
+int dFormat;
+int mStage;
 
 D3DVIEWPORT9 Viewport; //use this viewport
-float ScreenCenterX;
-float ScreenCenterY;
+float ScreenCX;
+float ScreenCY;
 
 //logger
 //bool logger = false;
@@ -72,37 +73,41 @@ int aimkey = 2;
 DWORD Daimkey = VK_RBUTTON;		//aimkey
 int aimsens = 3;				//aim sensitivity, makes aim smoother
 int aimfov = 6;					//aim field of view in % 
-int aimheight = 2;				//aim height value for menu, low value = aims heigher, high values aims lower
-int aimheightxy = 0;			//real value, aimheight * 4 + 27
-int esp = 1;					//anim pic esp
-//int useworldpos = 0;
+int aimheight = 2;				//aim height value for mensa, low value = aims heigher, high values aims lower
+int aimheightxy = 1;			//real value, aimheight * 4 + 27
+int esp = 0;					//anim pic esp
+int aimpause = 0;
+bool pause = false;
+bool botpause = false;
+unsigned int aimpausexy = 1;	//use x-999 (wait for xx millisecs, looks more legit)
+bool sound = false;
+int killsounds = 0;
 
 //autoshoot settings
 int autoshoot = 1;
 unsigned int asdelay = 50;		//use x-999 (shoot for xx millisecs, looks more legit)
-bool IsPressed = false;			//
+bool IsPressd = false;			//
 
 //timer
-DWORD frametime = timeGetTime();
-
-
-//sprite
-D3DXVECTOR3 ImagePos0;
+DWORD astime = timeGetTime();	//autoshoot
+DWORD framepause = timeGetTime(); //aimpause
+DWORD soundpause = timeGetTime(); //killsounds
 
 //sprite timer
 DWORD dwStartTime0 = 0; //time as the timer started
 DWORD dwTime0 = 0; //windowsuptime
-
+DWORD dwStartTime1 = 0; //time as the timer started
+DWORD dwTime1 = 0; //windowsuptime
 //==========================================================================================================================
 
 // getdir & log
-char dlldir[320];
-char* GetDirectoryFile(char *filename)
+char windir[320];
+char* GetFolderFile(char *fname)
 {
-	static char path[320];
-	strcpy_s(path, dlldir);
-	strcat_s(path, filename);
-	return path;
+	static char pfad[320];
+	strcpy_s(pfad, windir);
+	strcat_s(pfad, fname);
+	return pfad;
 }
 /*
 void Log(const char *fmt, ...)
@@ -115,12 +120,12 @@ void Log(const char *fmt, ...)
 	vsprintf_s(text, fmt, ap);
 	va_end(ap);
 
-	ofstream logfile(GetDirectoryFile("log.txt"), ios::app);
+	ofstream logfile(GetFolderFile("log.txt"), ios::app);
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
 */
-DWORD QuickChecksum(DWORD *pData, int size)
+DWORD QuickChecks(DWORD *pData, int size)
 {
 	if (!pData) { return 0x0; }
 
@@ -141,8 +146,36 @@ DWORD QuickChecksum(DWORD *pData, int size)
 
 //==========================================================================================================================
 
+void mmousemove(int myX, int myY)
+{
+	INPUT Input = { 0 };
+	Input.type = INPUT_MOUSE;
+	Input.mi.dx = myX;
+	Input.mi.dy = myY;
+	Input.mi.dwFlags = MOUSEEVENTF_MOVE;
+	SendInput(1, &Input, sizeof(INPUT)); // Move Mouse
+}
+
+void LLeftClickDown()
+{
+	INPUT    Input = { 0 };
+	// left down 
+	Input.type = INPUT_MOUSE;
+	Input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+	SendInput(1, &Input, sizeof(INPUT));
+}
+
+void LLeftClickUp()
+{
+	INPUT    Input = { 0 };
+	//::ZeroMemory(&Input, sizeof(INPUT));
+	Input.type = INPUT_MOUSE;
+	Input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+	SendInput(1, &Input, sizeof(INPUT));
+}
+
 //get distance
-float GetDistance(float Xx, float Yy, float xX, float yY)
+float GetDst(float Xx, float Yy, float xX, float yY)
 {
 	return sqrt((yY - Yy) * (yY - Yy) + (xX - Xx) * (xX - Xx));
 }
@@ -151,7 +184,7 @@ struct AimHPBarInfo_t
 {
 	float vOutX, vOutY;
 	INT       iTeam;
-	float CrosshairDistance;
+	float CrosshairDst;
 };
 std::vector<AimHPBarInfo_t>AimHPBarInfo;
 //float RealDistance;
@@ -167,7 +200,7 @@ std::vector<AimHPBarInfo_t>AimHPBarInfo;
 //   ------------ ----- ----
 //   mvp          c8       4
 //w2s for health bars
-void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
+void HPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
 	D3DXVECTOR3 from, to;
 	D3DXMATRIX mvp, world;
@@ -186,7 +219,8 @@ void AddHPBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	if (w > 0.01f)
 	{
-		aimheightxy = (Viewport.Height / 50) + (aimheight * 3);//27 2
+		//aimheightxy = (Viewport.Height / 50) + (aimheight * 3);
+		aimheightxy = ((float)Viewport.Height * 0.02f) + (aimheight * 3);
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -218,7 +252,7 @@ struct EspHPBarInfo_t
 {
 	float vOutX, vOutY;
 	INT       iTeam;
-	float CrosshairDistance;
+	float CrosshairDst;
 };
 std::vector<EspHPBarInfo_t>EspHPBarInfo;
 //float RealDistance;
@@ -234,7 +268,7 @@ std::vector<EspHPBarInfo_t>EspHPBarInfo;
 //   ------------ ----- ----
 //   mvp          c8       4
 //w2s for health bars
-void AddHPBarEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
+void HPBarEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
 	D3DXVECTOR3 from, to;
 	D3DXMATRIX mvp, world;
@@ -249,11 +283,14 @@ void AddHPBarEsp(LPDIRECT3DDEVICE9 Device, int iTeam)
 	float w = 0.0f;
 	to[0] = mvp[0] * world._14 + mvp[1] * world._24 + mvp[2] * world._34 + mvp[3];
 	to[1] = mvp[4] * world._14 + mvp[5] * world._24 + mvp[6] * world._34 + mvp[7];
+	//screen.z = worldToScreen.m[2][0] * point.x + worldToScreen.m[2][1] * point.y + worldToScreen.m[2][2] * point.z + worldToScreen.m[2][3];
 	w = mvp[12] * world._14 + mvp[13] * world._24 + mvp[14] * world._34 + mvp[15];
+	//screen.z /= w;
 
 	if (w > 0.01f)
 	{
-		aimheightxy = (Viewport.Height / 50) + (aimheight * 3);//27 2
+		//aimheightxy = (Viewport.Height / 50) + (aimheight * 3);
+		aimheightxy = ((float)Viewport.Height * 0.02f) + (aimheight * 3);
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -315,11 +352,11 @@ struct AimTBarInfo_t
 {
 	float vOutX, vOutY;
 	INT       iTeam;
-	float CrosshairDistance;
+	float CrosshairDst;
 };
 std::vector<AimTBarInfo_t>AimTBarInfo;
 
-void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
+void TBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 {
 	D3DXVECTOR3 from, to;
 	D3DXMATRIX mvp, world;
@@ -333,7 +370,8 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	if (w > 0.01f)
 	{
-		aimheightxy = (Viewport.Height / 50) + (aimheight * 5);//27 4
+		//aimheightxy = (Viewport.Height / 50) + (aimheight * 5);
+		aimheightxy = ((float)Viewport.Height * 0.02f) + (aimheight * 5);
 
 		float invw = 1.0f / w;
 		to[0] *= invw;
@@ -361,37 +399,6 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 	/*
 	float xx, yy;
-	D3DXMATRIX projMatrix, m1;
-	D3DXVECTOR4 position, input;
-
-	float VWidth = Viewport.Width * 0.5f;
-	float VHeight = Viewport.Height * 0.5f;
-	Device->GetVertexShaderConstantF(6, projMatrix, 4);
-
-	//input.y = 1; //height
-
-	D3DXMatrixTranspose(&projMatrix, &projMatrix);
-	D3DXVec4Transform(&position, &input, &projMatrix);
-
-	position.x = input.x * projMatrix._11 + input.y * projMatrix._21 + input.z * projMatrix._31 + projMatrix._41;
-	position.y = input.x * projMatrix._12 + input.y * projMatrix._22 + input.z * projMatrix._32 + projMatrix._42;
-	position.z = input.x * projMatrix._13 + input.y * projMatrix._23 + input.z * projMatrix._33 + projMatrix._43;
-	position.w = input.x * projMatrix._14 + input.y * projMatrix._24 + input.z * projMatrix._34 + projMatrix._44;
-
-	//if (projMatrix._44 > -0.1f)
-	//{
-		//float RealDistance = position.w;
-
-		xx = Viewport.X + VWidth - VWidth * position.x / position.w;
-		yy = Viewport.Y + VHeight + VHeight * position.y / position.w; //+ not -
-
-		AimTBarInfo_t pAimTBarInfo = { static_cast<float>(xx), static_cast<float>(yy), iTeam };
-		AimTBarInfo.push_back(pAimTBarInfo);
-	//}
-	*/
-
-	/*
-	float xx, yy;
 	D3DXMATRIX matrix, m1;
 	D3DXVECTOR4 position, input;
 	Device->GetVertexShaderConstantF(6, m1, 4);//6
@@ -416,7 +423,7 @@ void AddTBarAim(LPDIRECT3DDEVICE9 Device, int iTeam)
 
 //-----------------------------------------------------------------------------
 // Name: Save()
-// Desc: Saves Menu Item states for later Restoration
+// Desc: Saves mensa Item states for later Restoration
 //-----------------------------------------------------------------------------
 /*
 void Save(char* szSection, char* szKey, int iValue, LPCSTR file)
@@ -428,7 +435,7 @@ WritePrivateProfileString(szSection, szKey, szValue, file);
 */
 //-----------------------------------------------------------------------------
 // Name: Load()
-// Desc: Loads Menu Item States From Previously Saved File
+// Desc: Loads mensa Item States From Previously Saved File
 //-----------------------------------------------------------------------------
 /*
 int Load(char* szSection, char* szKey, int iDefaultValue, LPCSTR file)
@@ -440,10 +447,10 @@ return iResult;
 
 #include <string>
 #include <fstream>
-void SaveSettings()
+void SaveCfg()
 {
 	ofstream fout;
-	fout.open(GetDirectoryFile("palasettings.ini"), ios::trunc);
+	fout.open(GetFolderFile("palaconfig.ini"), ios::trunc);
 	fout << "Wallhack " << wallhack << endl;
 	fout << "Occlusion " << occlusion << endl;
 	fout << "Esp " << esp << endl;
@@ -452,16 +459,17 @@ void SaveSettings()
 	fout << "Aimsens " << aimsens << endl;
 	fout << "Aimfov " << aimfov << endl;
 	fout << "Aimheight " << aimheight << endl;
-	//fout << "Useworldpos " << useworldpos << endl;
+	fout << "AimdelayAfterKill " << aimpause << endl;
 	fout << "Autoshoot " << autoshoot << endl;
+	fout << "Killsounds " << killsounds << endl;
 	fout.close();
 }
 
-void LoadSettings()
+void LoadCfg()
 {
 	ifstream fin;
 	string Word = "";
-	fin.open(GetDirectoryFile("palasettings.ini"), ifstream::in);
+	fin.open(GetFolderFile("palaconfig.ini"), ifstream::in);
 	fin >> Word >> wallhack;
 	fin >> Word >> occlusion;
 	fin >> Word >> esp;
@@ -470,13 +478,14 @@ void LoadSettings()
 	fin >> Word >> aimsens;
 	fin >> Word >> aimfov;
 	fin >> Word >> aimheight;
-	//fin >> Word >> useworldpos;
+	fin >> Word >> aimpause;
 	fin >> Word >> autoshoot;
+	fin >> Word >> killsounds;
 	fin.close();
 }
 
 //==========================================================================================================================
-
+/*
 // colors
 #define Green				D3DCOLOR_ARGB(255, 000, 255, 000)
 #define Red					D3DCOLOR_ARGB(255, 255, 000, 000)
@@ -514,11 +523,19 @@ void LoadSettings()
 #define LightYellow			D3DCOLOR_ARGB(255, 255, 255, 153)
 #define DarkOutline			D3DCOLOR_ARGB(255, 37,   48,  52)
 #define TBlack				D3DCOLOR_ARGB(180, 000, 000, 000) 
+*/
 
+#define White				D3DCOLOR_ARGB(255, 255, 255, 255)
+#define Yellow				D3DCOLOR_ARGB(255, 255, 255, 0)
+#define TBlack				D3DCOLOR_ARGB(180, 0, 0, 0) 
+#define Black				D3DCOLOR_ARGB(255, 0, 0, 0) 
+#define Red					D3DCOLOR_ARGB(255, 255, 0, 0)
+#define Green				D3DCOLOR_ARGB(255, 0, 255, 0)
+#define DarkOutline			D3DCOLOR_ARGB(255, 37, 48, 52)
 
-// menu
+// mensa
 
-int MenuSelection = 0;
+int mensaSelect = 0;
 int Current = true;
 
 int PosX = 30;
@@ -535,10 +552,10 @@ POINT cPos;
 #define KategorieFarbe Yellow
 #define ItemText White
 
-LPD3DXFONT pFont; //font
-bool m_bCreated = false;
+LPD3DXFONT WinFont; //font
+//bool m_bCreated = false;
 
-int CheckTabs(int x, int y, int w, int h)
+int CheckTab(int x, int y, int w, int h)
 {
 	if (Show)
 	{
@@ -548,7 +565,7 @@ int CheckTabs(int x, int y, int w, int h)
 		{
 			if (GetAsyncKeyState(VK_LBUTTON) & 1)
 			{
-				return 1;
+				//return 1; //disabled mouse selection in menu
 			}
 			return 2;
 		}
@@ -556,13 +573,13 @@ int CheckTabs(int x, int y, int w, int h)
 	return 0;
 }
 
-void FillRGB(LPDIRECT3DDEVICE9 pDevice, int x, int y, int w, int h, D3DCOLOR color)
+void FillRG(LPDIRECT3DDEVICE9 pDevice, int x, int y, int w, int h, D3DCOLOR color)
 {
 	D3DRECT rec = { x, y, x + w, y + h };
 	pDevice->Clear(1, &rec, D3DCLEAR_TARGET, color, 0, 0);
 }
 
-HRESULT DrawRectangle(LPDIRECT3DDEVICE9 Device, FLOAT x, FLOAT y, FLOAT w, FLOAT h, DWORD Color)
+HRESULT DrawRectangl(LPDIRECT3DDEVICE9 Device, FLOAT x, FLOAT y, FLOAT w, FLOAT h, DWORD Color)
 {
 	HRESULT hRet;
 
@@ -597,15 +614,15 @@ HRESULT DrawRectangle(LPDIRECT3DDEVICE9 Device, FLOAT x, FLOAT y, FLOAT w, FLOAT
 
 VOID DrawBorder(LPDIRECT3DDEVICE9 Device, INT x, INT y, INT w, INT h, INT px, DWORD BorderColor)
 {
-	DrawRectangle(Device, x, (y + h - px), w, px, BorderColor);
-	DrawRectangle(Device, x, y, px, h, BorderColor);
-	DrawRectangle(Device, x, y, w, px, BorderColor);
-	DrawRectangle(Device, (x + w - px), y, px, h, BorderColor);
+	DrawRectangl(Device, x, (y + h - px), w, px, BorderColor);
+	DrawRectangl(Device, x, y, px, h, BorderColor);
+	DrawRectangl(Device, x, y, w, px, BorderColor);
+	DrawRectangl(Device, (x + w - px), y, px, h, BorderColor);
 }
 
 VOID DrawBoxWithBorder(LPDIRECT3DDEVICE9 Device, INT x, INT y, INT w, INT h, DWORD BoxColor, DWORD BorderColor)
 {
-	DrawRectangle(Device, x, y, w, h, BoxColor);
+	DrawRectangl(Device, x, y, w, h, BoxColor);
 	DrawBorder(Device, x, y, w, h, 1, BorderColor);
 }
 
@@ -614,28 +631,28 @@ VOID DrawBox(LPDIRECT3DDEVICE9 Device, INT x, INT y, INT w, INT h, DWORD BoxColo
 	DrawBorder(Device, x, y, w, h, 1, BoxColor);
 }
 
-void WriteText(int x, int y, DWORD color, char *text)
+void WriteTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	pFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
+	WinFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
 }
 
-void lWriteText(int x, int y, DWORD color, char *text)
+void lWriteTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	pFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
+	WinFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
 }
 
-void cWriteText(int x, int y, DWORD color, char *text)
+void cWriteTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	pFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
+	WinFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
 }
 
-HRESULT DrawString(LPD3DXFONT pFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
+HRESULT DrawStrin(LPD3DXFONT WinFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
 {
 	HRESULT hRet;
 
@@ -653,18 +670,18 @@ HRESULT DrawString(LPD3DXFONT pFont, INT X, INT Y, DWORD dColor, CONST PCHAR cSt
 
 	if (SUCCEEDED(hRet))
 	{
-		pFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
-		hRet = pFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
+		WinFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
+		hRet = WinFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
 	}
 
 	return hRet;
 }
 
-void Category(LPDIRECT3DDEVICE9 pDevice, char *text)
+void Categor(LPDIRECT3DDEVICE9 pDevice, char *text)
 {
 	if (Show)
 	{
-		int Check = CheckTabs(PosX+44, (PosY+51) + (Current * 15), 190, 10);
+		int Check = CheckTab(PosX+44, (PosY+51) + (Current * 15), 190, 10);
 		DWORD ColorText;
 
 		ColorText = KategorieFarbe;
@@ -672,20 +689,20 @@ void Category(LPDIRECT3DDEVICE9 pDevice, char *text)
 		if (Check == 2)
 			ColorText = ItemCurrent;
 
-		if (MenuSelection == Current)
+		if (mensaSelect == Current)
 			ColorText = ItemCurrent;
 
-		WriteText(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
-		lWriteText(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
+		WriteTex(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
+		lWriteTex(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
 		Current++;
 	}
 }
 
-void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
+void AddIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
 {
 	if (Show)
 	{
-		int Check = CheckTabs(PosX+44, (PosY+51) + (Current * 15), 190, 10);
+		int Check = CheckTab(PosX+44, (PosY+51) + (Current * 15), 190, 10);
 		DWORD ColorText;
 
 		if (var)
@@ -709,7 +726,7 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 		if (Check == 2)
 			ColorText = ItemCurrent;
 
-		if (MenuSelection == Current)
+		if (mensaSelect == Current)
 		{
 			if (GetAsyncKeyState(VK_RIGHT) & 1)
 			{
@@ -725,104 +742,108 @@ void AddItem(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Ma
 			}
 		}
 
-		if (MenuSelection == Current)
+		if (mensaSelect == Current)
 			ColorText = ItemCurrent;
 
 
-		WriteText(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
-		WriteText(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
+		WriteTex(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
+		WriteTex(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
 
-		lWriteText(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
-		lWriteText(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
+		lWriteTex(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
+		lWriteTex(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
 		Current++;
 	}
 }
 
 //=====================================================================================================================
 
-LPD3DXSPRITE lpSprite0, lpSprite1, lpSprite2, lpSprite3, lpSprite4, lpSprite5, lpSprite6, lpSprite7, lpSprite8, lpSprite9, lpSprite10, lpSprite11, lpSprite12, lpSprite13 = NULL; //menu
+LPD3DXSPRITE pSprite0, pSprite1, pSprite2, pSprite3, pSprite4, pSprite5, pSprite6, pSprite7, pSprite8, pSprite9, pSprite10, pSprite11, pSprite12, pSprite13 = NULL; //mensa
 LPD3DXSPRITE lpEsp0, lpEsp1, lpEsp2, lpEsp3, lpEsp4, lpEsp5, lpEsp6, lpEsp7, lpEsp8, lpEsp9, lpEsp10, lpEsp11, lpEsp12, lpEsp13, lpEsp14 = NULL; //esp
-LPDIRECT3DTEXTURE9 lpSpriteImage0, lpSpriteImage1, lpSpriteImage2, lpSpriteImage3, lpSpriteImage4, lpSpriteImage5, lpSpriteImage6, lpSpriteImage7, lpSpriteImage8, lpSpriteImage9, lpSpriteImage10, lpSpriteImage11, lpSpriteImage12, lpSpriteImage13, lpSpriteImage14 = NULL; //menu
+LPDIRECT3DTEXTURE9 pSpriteImage0, pSpriteImage1, pSpriteImage2, pSpriteImage3, pSpriteImage4, pSpriteImage5, pSpriteImage6, pSpriteImage7, pSpriteImage8, pSpriteImage9, pSpriteImage10, pSpriteImage11, pSpriteImage12, pSpriteImage13, pSpriteImage14 = NULL; //mensa
 LPDIRECT3DTEXTURE9 lpEspImage0, lpEspImage1, lpEspImage2, lpEspImage3, lpEspImage4, lpEspImage5, lpEspImage6, lpEspImage7, lpEspImage8, lpEspImage9, lpEspImage10, lpEspImage11, lpEspImage12, lpEspImage13, lpEspImage14, lpEspImage15 = NULL; //esp
-bool bSpriteCreated1, bSpriteCreated2 = false;
+bool Sprite1337233802Creatd1, Sprite1337233802Creatd2 = false;
 
-bool CreateOverlaySprite(IDirect3DDevice9* pd3dDevice)
+bool WinCreateSprite(IDirect3DDevice9* pd3dDevice)
 {
+	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\menu\\Menu0.png"), &lpSpriteImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame1.png"), &lpSpriteImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame2.png"), &lpSpriteImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame3.png"), &lpSpriteImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame4.png"), &lpSpriteImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame5.png"), &lpSpriteImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame6.png"), &lpSpriteImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame7.png"), &lpSpriteImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame8.png"), &lpSpriteImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame9.png"), &lpSpriteImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame10.png"), &lpSpriteImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame11.png"), &lpSpriteImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame12.png"), &lpSpriteImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\greenwater\\Frame13.png"), &lpSpriteImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\menu\\Menu0.png"), &pSpriteImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame1.png"), &pSpriteImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame2.png"), &pSpriteImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame3.png"), &pSpriteImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame4.png"), &pSpriteImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame5.png"), &pSpriteImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame6.png"), &pSpriteImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame7.png"), &pSpriteImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame8.png"), &pSpriteImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame9.png"), &pSpriteImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame10.png"), &pSpriteImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame11.png"), &pSpriteImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame12.png"), &pSpriteImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\greenwater\\Frame13.png"), &pSpriteImage13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
-		bSpriteCreated1 = false;
+		//bSpriteCreated1 = detected?
+		Sprite1337233802Creatd1 = false;
 		return false;
 	}
 
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite0);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite1);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite2);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite3);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite4);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite5);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite6);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite7);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite8);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite9);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite10);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite11);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite12);
-	hr = D3DXCreateSprite(pd3dDevice, &lpSprite13);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite0);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite1);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite2);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite3);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite4);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite5);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite6);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite7);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite8);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite9);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite10);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite11);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite12);
+	hr = D3DXCreateSprite(pd3dDevice, &pSprite13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite1 failed");
-		bSpriteCreated1 = false;
+		Sprite1337233802Creatd1 = false;
 		return false;
 	}
 
-	bSpriteCreated1 = true;
-
+	Sprite1337233802Creatd1 = true;
+	
 	return true;
 }
 
-bool CreateOverlaySprite2(IDirect3DDevice9* pd3dDevice)
+bool WinCreateSprite2(IDirect3DDevice9* pd3dDevice)
 {
+	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetDirectoryFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
-
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetFolderFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
+	
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
-		bSpriteCreated2 = false;
+		//bSpriteCreated2 = detected?
+		Sprite1337233802Creatd2 = false;
 		return false;
 	}
 
@@ -845,12 +866,12 @@ bool CreateOverlaySprite2(IDirect3DDevice9* pd3dDevice)
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite2 failed");
-		bSpriteCreated2 = false;
+		Sprite1337233802Creatd2 = false;
 		return false;
 	}
 
-	bSpriteCreated2 = true;
-
+	Sprite1337233802Creatd2 = true;
+	
 	return true;
 }
 
@@ -868,35 +889,35 @@ void SafeRelease(COMObject*& pRes)
 
 // This will get called before Device::Clear(). If the device has been reset
 // then all the work surfaces will be created again.
-void PreClear(IDirect3DDevice9* device)
+void PreWinClear(IDirect3DDevice9* ddevice)
 {
-	if (!bSpriteCreated1)
-		CreateOverlaySprite(device);
+	if (!Sprite1337233802Creatd1)
+		WinCreateSprite(ddevice);
 
-	if (!bSpriteCreated2)
-		CreateOverlaySprite2(device);
+	if (!Sprite1337233802Creatd2)
+		WinCreateSprite2(ddevice);
 }
 
 // Delete work surfaces when device gets reset
-void DeleteRenderSurfaces()
+void DeletePicSurfaces()
 {
-	if (lpSprite0 != NULL)
+	if (pSprite0 != NULL)
 	{
-		//Log("SafeRelease(lpSprite)");
-		SafeRelease(lpSprite0);
-		SafeRelease(lpSprite1);
-		SafeRelease(lpSprite2);
-		SafeRelease(lpSprite3);
-		SafeRelease(lpSprite4);
-		SafeRelease(lpSprite5);
-		SafeRelease(lpSprite6);
-		SafeRelease(lpSprite7);
-		SafeRelease(lpSprite8);
-		SafeRelease(lpSprite9);
-		SafeRelease(lpSprite10);
-		SafeRelease(lpSprite11);
-		SafeRelease(lpSprite12);
-		SafeRelease(lpSprite13);
+		//Log("SafeRelease(pSprite)");
+		SafeRelease(pSprite0);
+		SafeRelease(pSprite1);
+		SafeRelease(pSprite2);
+		SafeRelease(pSprite3);
+		SafeRelease(pSprite4);
+		SafeRelease(pSprite5);
+		SafeRelease(pSprite6);
+		SafeRelease(pSprite7);
+		SafeRelease(pSprite8);
+		SafeRelease(pSprite9);
+		SafeRelease(pSprite10);
+		SafeRelease(pSprite11);
+		SafeRelease(pSprite12);
+		SafeRelease(pSprite13);
 	}
 
 	if (lpEsp0 != NULL)
@@ -919,21 +940,21 @@ void DeleteRenderSurfaces()
 		SafeRelease(lpEsp14);
 	}
 
-	bSpriteCreated1 = false;
-	bSpriteCreated2 = false;
+	Sprite1337233802Creatd1 = false;
+	Sprite1337233802Creatd2 = false;
 }
 
 // This gets called right before the frame is presented on-screen - Device::Present().
 // First, create the display text, FPS and info message, on-screen. Then then call
 // CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
-void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
+void PrePresen(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (bSpriteCreated1)
+	if (Sprite1337233802Creatd1)
 	{
-		if (lpSprite0 != NULL)
+		if (pSprite0 != NULL)
 		{
 			D3DXVECTOR3 position;
 			position.x = (float)cx;
@@ -942,26 +963,26 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 
 			textOffsetLeft = (int)position.x; //for later to offset text from image
 
-			//lpSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-			//lpSprite1->Draw(lpSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-			//lpSprite1->End();
+			//pSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+			//pSprite1->Draw(pSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+			//pSprite1->End();
 
-			position.x = 20.0f; //79.0f;
-			position.y = 20.0f;
-			position.z = 0.0f;
+			//position.x = 20.0f; //79.0f;
+			//position.y = 20.0f;
+			//position.z = 0.0f;
 
-			//menu background scale
+			//mensa background scale
 			D3DXMATRIX scaleMatrix0;
 			D3DXMATRIX transMatrix0;
 			D3DXMatrixScaling(&scaleMatrix0, 1.0f, 0.6f, 1.0f);
 			D3DXMatrixTranslation(&transMatrix0, position.x, position.y, position.z);
 			D3DXMatrixMultiply(&transMatrix0, &scaleMatrix0, &transMatrix0);
 
-			//draw menu background pic
-			lpSprite0->SetTransform(&transMatrix0);
-			lpSprite0->Begin(D3DXSPRITE_ALPHABLEND);
-			lpSprite0->Draw(lpSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
-			lpSprite0->End();
+			//draw mensa background pic
+			pSprite0->SetTransform(&transMatrix0);
+			pSprite0->Begin(D3DXSPRITE_ALPHABLEND);
+			pSprite0->Draw(pSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
+			pSprite0->End();
 
 			//anim timer
 			dwTime0 = GetTickCount() / 60;//50 speed
@@ -978,112 +999,113 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 			D3DXMATRIX scaleMatrix;
 			D3DXMATRIX transMatrix;
 			D3DXMatrixScaling(&scaleMatrix, 1.51f, 0.755f, 1.0f);
-			D3DXMatrixTranslation(&transMatrix, ImagePos0.x, ImagePos0.y, ImagePos0.z);
+			//D3DXMatrixTranslation(&transMatrix, ImagePos0.x, ImagePos0.y, ImagePos0.z);
+			D3DXMatrixTranslation(&transMatrix, 0.0f, 0.0f, 0.0f);
 			D3DXMatrixMultiply(&transMatrix, &scaleMatrix, &transMatrix);
 
 			//draw animation foreground pics
 			if (dwTime0 - dwStartTime0 == 0)
 			{
-				lpSprite1->SetTransform(&transMatrix);
-				lpSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite1->Draw(lpSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite1->End();
+				pSprite1->SetTransform(&transMatrix);
+				pSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite1->Draw(pSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite1->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 1)
 			{
-				lpSprite2->SetTransform(&transMatrix);
-				lpSprite2->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite2->Draw(lpSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite2->End();
+				pSprite2->SetTransform(&transMatrix);
+				pSprite2->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite2->Draw(pSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite2->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 2)
 			{
-				lpSprite3->SetTransform(&transMatrix);
-				lpSprite3->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite3->Draw(lpSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite3->End();
+				pSprite3->SetTransform(&transMatrix);
+				pSprite3->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite3->Draw(pSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite3->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 3)
 			{
-				lpSprite4->SetTransform(&transMatrix);
-				lpSprite4->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite4->Draw(lpSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite4->End();
+				pSprite4->SetTransform(&transMatrix);
+				pSprite4->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite4->Draw(pSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite4->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 4)
 			{
-				lpSprite5->SetTransform(&transMatrix);
-				lpSprite5->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite5->Draw(lpSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite5->End();
+				pSprite5->SetTransform(&transMatrix);
+				pSprite5->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite5->Draw(pSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite5->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 5)
 			{
-				lpSprite6->SetTransform(&transMatrix);
-				lpSprite6->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite6->Draw(lpSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite6->End();
+				pSprite6->SetTransform(&transMatrix);
+				pSprite6->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite6->Draw(pSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite6->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 6)
 			{
-				lpSprite7->SetTransform(&transMatrix);
-				lpSprite7->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite7->Draw(lpSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite7->End();
+				pSprite7->SetTransform(&transMatrix);
+				pSprite7->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite7->Draw(pSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite7->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 7)
 			{
-				lpSprite8->SetTransform(&transMatrix);
-				lpSprite8->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite8->Draw(lpSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite8->End();
+				pSprite8->SetTransform(&transMatrix);
+				pSprite8->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite8->Draw(pSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite8->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 8)
 			{
-				lpSprite9->SetTransform(&transMatrix);
-				lpSprite9->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite9->Draw(lpSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite9->End();
+				pSprite9->SetTransform(&transMatrix);
+				pSprite9->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite9->Draw(pSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite9->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 9)
 			{
-				lpSprite10->SetTransform(&transMatrix);
-				lpSprite10->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite10->Draw(lpSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite10->End();
+				pSprite10->SetTransform(&transMatrix);
+				pSprite10->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite10->Draw(pSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite10->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 10)
 			{
-				lpSprite11->SetTransform(&transMatrix);
-				lpSprite11->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite11->Draw(lpSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite11->End();
+				pSprite11->SetTransform(&transMatrix);
+				pSprite11->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite11->Draw(pSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite11->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 11)
 			{
-				lpSprite12->SetTransform(&transMatrix);
-				lpSprite12->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite12->Draw(lpSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite12->End();
+				pSprite12->SetTransform(&transMatrix);
+				pSprite12->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite12->Draw(pSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite12->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 12)
 			{
-				lpSprite13->SetTransform(&transMatrix);
-				lpSprite13->Begin(D3DXSPRITE_ALPHABLEND);
-				lpSprite13->Draw(lpSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
-				lpSprite13->End();
+				pSprite13->SetTransform(&transMatrix);
+				pSprite13->Begin(D3DXSPRITE_ALPHABLEND);
+				pSprite13->Draw(pSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
+				pSprite13->End();
 			}
 		}
 	}
@@ -1091,12 +1113,12 @@ void PrePresent(IDirect3DDevice9* Device, int cx, int cy)
 	// draw text
 }
 
-void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
+void PrePresen2(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (bSpriteCreated2)
+	if (Sprite1337233802Creatd2)
 	{
 		if (lpEsp0 != NULL)
 		{
@@ -1107,23 +1129,23 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 
 			textOffsetLeft = (int)position.x; //for later to offset text from image
 
-
 			//draw esp background pic
 			//lpEsp0->SetTransform(&transMatrix0);
 			lpEsp0->Begin(D3DXSPRITE_ALPHABLEND);
 			lpEsp0->Draw(lpEspImage0, NULL, NULL, &position, 0xFFFFFFFF);
 			lpEsp0->End();
 
+
 			//anim timer
-			dwTime0 = GetTickCount() / 60;//50 speed
+			dwTime1 = GetTickCount() / 60;//50 speed
 
 			//setting the starttime in ms
-			if (dwTime0 - dwStartTime0 > 13)
-				dwStartTime0 = GetTickCount() / 60;
+			if (dwTime1 - dwStartTime1 > 13)
+				dwStartTime1 = GetTickCount() / 60;
 
-
+		
 			//draw animation foreground pics
-			if (dwTime0 - dwStartTime0 == 0)
+			if (dwTime1 - dwStartTime1 == 0)
 			{
 				//lpEsp1->SetTransform(&transMatrix);
 				lpEsp1->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1131,7 +1153,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp1->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 1)
+			if (dwTime1 - dwStartTime1 == 1)
 			{
 				//lpEsp2->SetTransform(&transMatrix);
 				lpEsp2->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1139,7 +1161,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp2->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 2)
+			if (dwTime1 - dwStartTime1 == 2)
 			{
 				//lpEsp3->SetTransform(&transMatrix);
 				lpEsp3->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1147,7 +1169,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp3->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 3)
+			if (dwTime1 - dwStartTime1 == 3)
 			{
 				//lpEsp4->SetTransform(&transMatrix);
 				lpEsp4->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1155,7 +1177,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp4->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 4)
+			if (dwTime1 - dwStartTime1 == 4)
 			{
 				//lpEsp5->SetTransform(&transMatrix);
 				lpEsp5->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1163,7 +1185,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp5->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 5)
+			if (dwTime1 - dwStartTime1 == 5)
 			{
 				//lpEsp6->SetTransform(&transMatrix);
 				lpEsp6->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1171,7 +1193,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp6->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 6)
+			if (dwTime1 - dwStartTime1 == 6)
 			{
 				//lpEsp7->SetTransform(&transMatrix);
 				lpEsp7->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1179,7 +1201,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp7->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 7)
+			if (dwTime1 - dwStartTime1 == 7)
 			{
 				//lpEsp8->SetTransform(&transMatrix);
 				lpEsp8->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1187,7 +1209,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp8->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 8)
+			if (dwTime1 - dwStartTime1 == 8)
 			{
 				//lpEsp9->SetTransform(&transMatrix);
 				lpEsp9->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1195,7 +1217,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp9->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 9)
+			if (dwTime1 - dwStartTime1 == 9)
 			{
 				//lpEsp10->SetTransform(&transMatrix);
 				lpEsp10->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1203,7 +1225,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp10->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 10)
+			if (dwTime1 - dwStartTime1 == 10)
 			{
 				//lpEsp11->SetTransform(&transMatrix);
 				lpEsp11->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1211,7 +1233,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp11->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 11)
+			if (dwTime1 - dwStartTime1 == 11)
 			{
 				//lpEsp12->SetTransform(&transMatrix);
 				lpEsp12->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1219,7 +1241,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp12->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 12)
+			if (dwTime1 - dwStartTime1 == 12)
 			{
 				//lpEsp13->SetTransform(&transMatrix);
 				lpEsp13->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1227,7 +1249,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 				lpEsp13->End();
 			}
 
-			if (dwTime0 - dwStartTime0 == 13)
+			if (dwTime1 - dwStartTime1 == 13)
 			{
 				//lpEsp14->SetTransform(&transMatrix);
 				lpEsp14->Begin(D3DXSPRITE_ALPHABLEND);
@@ -1242,7 +1264,7 @@ void PrePresent2(IDirect3DDevice9* Device, int cx, int cy)
 
 //==========================================================================================================================
 
-// menu part
+// mensa part
 char *opt_OnOff[] = { "[OFF]", "[On]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Mode 1]", "[Mode 2]", "[Compatibility]" };
@@ -1250,70 +1272,58 @@ char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt
 char *opt_Sensitivity[] = { "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]", "[11]", "[12]", "[13]", "[14]", "[15]", "[16]", "[17]", "[18]", "[19]", "[20]" };
 char *opt_Aimheight[] = { "[0]", "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]" };
 char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%]", "[70%]", "[80%]", "[90%]" };
-char *opt_Autoshoot[] = { "[OFF]", "[OnKeyDown]" };
+char *opt_Aimpause[] = { "[0]", "[0.2sec]", "[0.4sec]", "[0.6sec]", "[0.8sec]", "[1.0sec]", "[1.2sec]", "[1.4sec]", "[1.6sec]", "[1.8sec]", "[2.0sec]" };
+char *opt_autoshoot[] = { "[OFF]", "[OnKeyDown]" };
 
-void BuildMenu(LPDIRECT3DDEVICE9 pDevice)
+void Drawmensa(LPDIRECT3DDEVICE9 pDevice)
 {
 	if (GetAsyncKeyState(VK_INSERT) & 1)
 	{
 		Show = !Show;
 
 		//save settings
-		SaveSettings();
+		SaveCfg();
 
-		//Save("Wallhack", "Wallhack", wallhack, GetDirectoryFile("palasettings.ini"));
+		//Save("wallhack", "wallhack", wallhack, GetFolderFile("palaconfig.ini"));
 
-		PlaySoundA(GetDirectoryFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+		PlaySoundA(GetFolderFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 	}
 
-	if (Show && pFont)
+	if (Show && WinFont)
 	{
-		//Shift|RMouse|LMouse|Ctrl|Alt|Space|X|C
-		if (aimkey == 0) Daimkey = 0;
-		if (aimkey == 1) Daimkey = VK_SHIFT;
-		if (aimkey == 2) Daimkey = VK_RBUTTON;
-		if (aimkey == 3) Daimkey = VK_LBUTTON;
-		if (aimkey == 4) Daimkey = VK_CONTROL;
-		if (aimkey == 5) Daimkey = VK_MENU;
-		if (aimkey == 6) Daimkey = VK_SPACE;
-		if (aimkey == 7) Daimkey = 0x58; //X
-		if (aimkey == 8) Daimkey = 0x43; //C
-
 		if (GetAsyncKeyState(VK_UP) & 1)
-			MenuSelection--;
+			mensaSelect--;
 
 		if (GetAsyncKeyState(VK_DOWN) & 1)
-			MenuSelection++;
+			mensaSelect++;
 
 		//draw background
-		FillRGB(pDevice, 71, 64, 200, 172, TBlack);
+		FillRG(pDevice, 71, 64, 200, 201, TBlack);
 		DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
 		DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
-		//draw menu pic
-		PrePresent(pDevice, 20, 20);
-		cWriteText(172, 71, White, "Paladins D3D");
+		//draw mensa pic
+		PrePresen(pDevice, 20, 20);
+		//cWriteTex(172, 71, White, "Paladins D3D");
 
 		Current = 1;
-		//Category(pDevice, " [D3D]");
-		AddItem(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
-		AddItem(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
-		AddItem(pDevice, " Esp", esp, opt_OnOff, 1);
-		AddItem(pDevice, " Aimbot", aimbot, opt_Teams, 3);
-		AddItem(pDevice, " Aimkey", aimkey, opt_Keys, 8);
-		AddItem(pDevice, " Aimsens", aimsens, opt_Sensitivity, 19);
-		AddItem(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
-		AddItem(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
-		//AddItem(pDevice, " UseWorldPos", useworldpos, opt_OnOff, 1);
-		AddItem(pDevice, " Autoshoot", autoshoot, opt_Autoshoot, 1);
+		//Categor(pDevice, " [D3D]");
+		AddIte(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
+		AddIte(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
+		AddIte(pDevice, " Esp", esp, opt_OnOff, 1);
+		AddIte(pDevice, " Aimbot", aimbot, opt_Teams, 3);
+		AddIte(pDevice, " Aimkey", aimkey, opt_Keys, 8);
+		AddIte(pDevice, " Aimsens", aimsens, opt_Sensitivity, 19);
+		AddIte(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
+		AddIte(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
+		AddIte(pDevice, " AimdelayAfterKill", aimpause, opt_Aimpause, 10);
+		AddIte(pDevice, " Autoshoot", autoshoot, opt_autoshoot, 1);
+		AddIte(pDevice, " Killsounds", killsounds, opt_OnOff, 1);
 
-		//if (MenuSelection >= Current)
-			//MenuSelection = 1;
+		if (mensaSelect >= Current)
+			mensaSelect = 1;
 
-		if (MenuSelection > 9)
-			MenuSelection = 1;//Current;
-
-		if (MenuSelection < 1)
-			MenuSelection = 9;//Current;
+		if (mensaSelect < 1)
+			mensaSelect = 11;//Current;
 	}
 }
 
@@ -1335,7 +1345,7 @@ HRESULT GenerateShader(IDirect3DDevice9 *pDevice, IDirect3DPixelShader9 **pShade
 	else
 		sprintf_s(szShader, "ps.%d.%d\ndef c0, %f, %f, %f, %f\nmov oC0,c0", PXSHVER1, PXSHVER2, r, g, b, a);
 	D3DXAssembleShader(szShader, sizeof(szShader), NULL, NULL, 0, &pShaderBuf, NULL);
-	if (FAILED(pDevice->CreatePixelShader((const DWORD*)pShaderBuf->GetBufferPointer(), pShader)))return E_FAIL;
+	if (FAILED(pDevice->CreatePixelShader((const DWORD*)pShaderBuf->GetBufferPointer(), pShader)))return E_FAIL; //could crash
 	return S_OK;
 }
 */
