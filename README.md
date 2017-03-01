@@ -1,8 +1,5 @@
 # Paladins-D3D
-paladins d3d multihack (for version 0.40 or higher)
-
-![alt tag](https://github.com/DrNseven/Paladins-D3D/blob/master/Release/howto.jpg)
-
+paladins d3d multihack 
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
