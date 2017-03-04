@@ -498,8 +498,11 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCY;
 
 			//smooth aim
-			DistX /= (1 + aimsens);
-			DistY /= (1 + aimsens);
+			if (usehumanaim == 0)
+			{
+				DistX /= (1 + aimsens);
+				DistY /= (1 + aimsens);
+			}
 
 			if (usehumanaim > 0 && smooth_on && !after_kill)
 			{
@@ -515,8 +518,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			}
 			else
 			{
-				DistX /= (1 + aimsens * 2);
-				DistY /= (1 + aimsens * 2);
+				DistX /= (1 + aimsens);
+				DistY /= (1 + aimsens);
 			}
 
 			//aim
@@ -589,6 +592,12 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			double DistX = AimTBarInfo[BestTarget].vOutX - ScreenCX;
 			double DistY = AimTBarInfo[BestTarget].vOutY - ScreenCY;
 
+			if (usehumanaim == 0)
+			{
+				DistX /= (1 + aimsens * 2);
+				DistY /= (1 + aimsens * 2);
+			}
+			
 			if (usehumanaim > 0 && smooth_on && !after_kill)
 			{
 				//smooth aim
