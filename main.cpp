@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.6b by Nseven
+* Paladins D3D Hack Source V1.6c
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -8,7 +8,7 @@ How to compile:
 - select x86(32bit) 
 - compile dll, press f7 or click the green triangle
 
-x86 compiled dll will be in paladinsd3d\Release folder
+x86 compiled dll will be in Paladinsd3d\Release folder
 
 If you share your dll with others, remove dependecy on vs runtime before compiling:
 - click: project -> properties -> configuration properties -> C/C++ -> code generation -> runtime library: Multi-threaded (/MT)
@@ -77,7 +77,7 @@ HRESULT APIENTRY SetStreamSource_hook(LPDIRECT3DDEVICE9 pDevice, UINT StreamNumb
 	{
 		Stride = sStride;
 
-		//if (Stride == 12 && pStreamData)
+		//if (pStreamData)
 		//{
 			//pStreamData->GetDesc(&vdesc);
 		//}
@@ -119,34 +119,43 @@ HRESULT APIENTRY SetVertexDeclaration_hook(LPDIRECT3DDEVICE9 pDevice, IDirect3DV
 
 //==========================================================================================================================
 
+//big enemy hp bars
+//dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12 
+//dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12 
+//dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12 
+
+//small t
+//dWidth == 12 && dHeight == 8 && Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2 
+//dWidth == 12 && dHeight == 8 && Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2 
+
 HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE Type, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 {
-	//more fps but could cause problems
-	if(mStage == 1)
-	return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+	//more fps but could cause problems with wallhack at lower setting
+	if (mStage == 1)
+		return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
-	//wallmhack
-	if (wallmhack > 0 && decl->Type == 5 && numElements == 11) //models
+	//wallhack
+	if (wallhack > 0 && decl->Type == 5 && numElements == 11) //models
 	{
 		//pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);//detected?
 		pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
 
 		//chams
-		if (wallmhack == 3 && pSize != 164)
+		if (wallhack == 3 && pSize != 164)
 		{
 			float sRed[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 			pDevice->SetPixelShaderConstantF(0, sRed, 1);//0, 4, 8
 		}
 
 		//glow
-		if (wallmhack == 2 && pSize == 136 && mStartRegister == 235) //hax shader (does not work for everyone)
+		if (wallhack == 2 && pSize == 136 && mStartRegister == 235) //hax shader (does not work for everyone)
 		{
 			pDevice->SetPixelShader(NULL);
 		}
 
 		DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
-		if (wallmhack == 3 && pSize != 164)
+		if (wallhack == 3 && pSize != 164)
 		{
 			float sGreen[4] = { 0.0f, 0.5f, 0.0f, 0.0f };
 			pDevice->SetPixelShaderConstantF(0, sGreen, 1);//0, 4, 8
@@ -172,42 +181,49 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	if (killsounds == 1 && dWidth == 144 && dHeight == 176 && Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2)
 		sound = true;
 
-	//aimbot
+	//aimbot 1
 	if(
-		(aimbot == 1 && pCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
-		(aimbot == 1 && pCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
-		(aimbot == 1 && pCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
-		//(aimbot == 1 && pCRC == 0x337194bd && dWidth == 1024 && dHeight == 1024 && dFormat == 50 && Stride == 12 && NumVertices == 66 && primCount == 84)//red/orange near/mid range 5+kills (no)
+		(aimbot == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
+		(aimbot == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
+		(aimbot == 1 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)	//red near range
 		)
 		HPBarAim(pDevice, 1);
 
-	//aimbot2
-	if ((aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10) && (pCRC == 0xd81bd7af || pCRC == 0xcb415efe)) //team red/orange, enemy team
+	//aimbot 2
+	if ((aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10) && (qlCRC == 0xd81bd7af || qlCRC == 0xcb415efe)) //team red/orange, enemy team
 		TBarAim(pDevice, 1);
 
 	//compatibility
-	if (aimbot == 3 && NumVertices != 96 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
+	if (aimbot == 3 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
 		TBarAim(pDevice, 1);
 
-	//esp
+	//pic esp
 	if (
-		(esp == 1 && pCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
-		(esp == 1 && pCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
-		(esp == 1 && pCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
+		(esp == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
+		(esp == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
+		(esp == 1 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
 		)
 		HPBarEsp(pDevice, 1);
 
-	//remove texture, used for testing
-	//if(NumVertices != 96 && Stride == 12 && primCount == 84 && decl->Type == 4 && numElements == 4 && vSize == 520 && pSize == 360 && mStartRegister == 6 && mVector4fCount == 12)
-		//return D3D_OK; 	
-	
+	//text esp
+	if (
+		(esp == 2 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
+		(esp == 2 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
+		(esp == 2 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
+		)
+		HPBarEsp(pDevice, 2);
+
 	/*
 	//small bruteforce logger
 	if (logger)
 	{
-		//log hp bar crc with f10
-		//if ((Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2) && (GetAsyncKeyState(VK_F10) & 1))
-			//Log("pCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", pCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		//log hp bars
+		if ((Stride == 8 && NumVertices == 8 && primCount == 10 && decl->Type == 8 && numElements == 3 && vSize == 476 && pSize == 416 && mStartRegister == 8 && mVector4fCount == 2) && (GetAsyncKeyState(VK_F10) & 1))
+			Log("small qlCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", qlCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		if ((dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) && (GetAsyncKeyState(VK_F10) & 1))
+			Log("big qlCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", qlCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		if ((dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) && (GetAsyncKeyState(VK_F10) & 1))
+			Log("big qlCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", qlCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
 
 		//hold down P key until a texture changes, press I to log values of those textures
 		if (GetAsyncKeyState('O') & 1) //-
@@ -216,10 +232,10 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 			countnum++;
 		if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
 			countnum = -1;
-		if (countnum == decl->Type)
+		if (countnum == NumVertices/10)
 			if ((Stride > NULL) && (GetAsyncKeyState('I') & 1)) //press I to log to log.txt
-				Log("pCRC == %x && dWidth == %d && dHeight == %d && dFormat == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", pCRC, dWidth, dHeight, dFormat, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
-		if (countnum == decl->Type)
+				Log("qlCRC == %x && dWidth == %d && dHeight == %d && Stride == %d && NumVertices == %d && primCount == %d && decl->Type == %d && numElements == %d && vSize == %d && pSize == %d && mStartRegister == %d && mVector4fCount == %d", qlCRC, dWidth, dHeight, Stride, NumVertices, primCount, decl->Type, numElements, vSize, pSize, mStartRegister, mVector4fCount);
+		if (countnum == NumVertices/10)
 		{
 			//pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
 			//DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
@@ -229,48 +245,48 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 		}
 	}
 	*/
-
+	
 	return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 }
 
 //==========================================================================================================================
 
-bool DoInit = true;
+bool DolpubInit = true;
 HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr) return EndScene_orig(pDevice);
 
 	//sprite
-	PrePalClear(pDevice);
+	PrelpubClear(pDevice);
 
-	if (DoInit)
+	if (DolpubInit)
 	{
-		LoadCfg();
+		LoadlpubCfg();
 
-		//wallmhack = Load("wallmhack", "wallmhack", wallmhack, GetDirectoryFile("palaconfig.ini"));
+		//wallhack = Load("wallhack", "wallhack", wallhack, GetDirectoryFile("lpubaconfig.ini"));
 
-		DoInit = false;
+		DolpubInit = false;
 	}
 
-	if (palFont == NULL)
+	if (lpubFont == NULL)
 	{
-		HRESULT hr = D3DXCreateFont(pDevice, 14, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &palFont);
+		HRESULT hr = D3DXCreateFont(pDevice, 14, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &lpubFont);
 
 		if (FAILED(hr)) {
 			//Log("D3DXCreateFont failed");
 		}
 	}
 
-	if (palFont)
+	if (lpubFont)
 	{
-		DrawPalMenu(pDevice);
+		DrawlpubMenu(pDevice);
 	}
 
 	//smooth after kill
 	if (usehumanaim > 0 && after_kill)
 	{
 		//aimsens = slowsens;  //slow sens
-		aimheight = 8; // body height
+		//aimheight = 8; // body height
 
 		if (timeGetTime() - frameafterkill >= 888) //wait  sec
 		{
@@ -284,13 +300,13 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	if (usehumanaim > 0 && smooth_on && !after_kill)
 	{
 		//aimsens = fastsens;   //fast sens
-		aimheight = 3; //head "lock-on" height
+		//aimheight = 3; //head "lock-on" height
 
 		if ((!GetAsyncKeyState(Daimkey)) || (timeGetTime() - framesmooth >= 444)) //wait sec
 		{
 			smooth_on = false;
 			//aimsens = slowsens;    //slow sens
-			aimheight = 8;  //body height
+			//aimheight = 8;  //body height
 			framesmooth = timeGetTime();
 		}
 
@@ -310,115 +326,115 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			int random = rand() % 36;
 
 			if (random == 0)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\assasin.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\assasin.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 1)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\bullseye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\bullseye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 2)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\dominating.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\dominating.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 3)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\doublekill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\doublekill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 4)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\eagleeye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\eagleeye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 5)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\excellent.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\excellent.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 6)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\godlike.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\godlike.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 7)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\hattrick.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\hattrick.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 8)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\headhunter.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\headhunter.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 9)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\headshot.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\headshot.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 10)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\impressive.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\impressive.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 11)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\killingmachine.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\killingmachine.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 12)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\killingspree.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\killingspree.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 13)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\maniac.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\maniac.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 14)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\massacre.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\massacre.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 15)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\megakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\megakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 16)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\monsterkill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\monsterkill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 17)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\multikill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\multikill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 18)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\outstanding.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\outstanding.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 19)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\payback.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\payback.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 20)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\rampage.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\rampage.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 21)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\retribution.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\retribution.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 22)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\ultrakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\ultrakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 23)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\unreal.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\unreal.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 24)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\unstoppable.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\unstoppable.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 25)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\vengeance.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\vengeance.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 26)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\cheer\\cheer (1).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\cheer\\cheer (1).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 27)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (2).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (2).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 28)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (3).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (3).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 29)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (4).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (4).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 30)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (5).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (5).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 31)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (6).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (6).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 32)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (7).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (7).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 33)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (8).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (8).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 34)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (9).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (9).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 35)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (01).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (01).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 36)
-				PlaySoundA(GetPalDirFile("stuff\\sounds\\speech\\cheer (11).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (11).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			sound = false;
 			soundpause = timeGetTime();
@@ -426,14 +442,23 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	}
 
 	//draw esp
-	if (esp == 1 && EspHPBarInfo.size() != NULL)
+	if (esp > 0 && EspHPBarInfo.size() != NULL)
 	{
 		for (unsigned int i = 0; i < EspHPBarInfo.size(); i++)
 		{
-			//esp
-			if(EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1)
-			PrePalPresent2(pDevice, (int)EspHPBarInfo[i].vOutX - 32, (int)EspHPBarInfo[i].vOutY - 20);
-			//DrawString(palFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//pic esp
+			if ((esp == 1 && EspHPBarInfo[i].iTeam == 1) && (EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1))
+			{
+				PrelpubPresent2(pDevice, (int)EspHPBarInfo[i].vOutX - 32, (int)EspHPBarInfo[i].vOutY - 20);
+				//DrawlpubString(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			}
+
+			//text esp
+			if ((esp == 2 && EspHPBarInfo[i].iTeam == 2 && lpubFont) && (EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1))
+			{
+				DrawlpubStrin(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "Enemy");
+				//DrawlpubStrin(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "%.f", (float)EspHPBarInfo.size());
+			}
 		}
 	}
 	EspHPBarInfo.clear();
@@ -461,7 +486,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		{
 			//test w2s
 			//if (logger)
-			//DrawString(palFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//DrawlpubString(lpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//DrawlpubStrin(lpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, Green, "%.f", (float)AimHPBarInfo.size());
 
 			//aimfov
 			float radiusx = (aimfov*10.0f) * (ScreenCX / 100); 
@@ -497,7 +523,6 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCY;
 
-			//smooth aim
 			if (usehumanaim == 0)
 			{
 				DistX /= (1 + aimsens);
@@ -523,9 +548,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			}
 
 			//aim
-			//if (GetAsyncKeyState(Daimkey) & 0x8000)
 				mouse_event(MOUSEEVENTF_MOVE, (float)DistX, (float)DistY, 0, NULL);
-				//mmousemove((float)DistX, (float)DistY);
 
 			//autoshoot on
 			if ((!GetAsyncKeyState(VK_LBUTTON) && (autoshoot == 1))) //
@@ -555,8 +578,8 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		{
 			//test w2s
 			//if (logger)
-			//DrawStrin(palFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
-			//DrawStrin(palFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%.f", (float)Daimkey);
+			//DrawlpubStrin(lpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
+			//DrawlpubStrin(lpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%.f", (float)AimTBarInfo.size());
 
 			//aimfov
 			float radiusx = (aimfov*20.0f) * (ScreenCX / 100); 
@@ -597,7 +620,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 				DistX /= (1 + aimsens * 2);
 				DistY /= (1 + aimsens * 2);
 			}
-			
+
 			if (usehumanaim > 0 && smooth_on && !after_kill)
 			{
 				//smooth aim
@@ -617,9 +640,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			}
 
 			//aim
-			//if ((botpause==false) && (GetAsyncKeyState(Daimkey) & 0x8000))
 				mouse_event(MOUSEEVENTF_MOVE, (float)DistX, (float)DistY, 0, NULL);
-				//mmousemove((float)DistX, (float)DistY);
 
 			//autoshoot on
 			if ((!GetAsyncKeyState(VK_LBUTTON) && (autoshoot == 1))) //
@@ -653,14 +674,16 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	//draw logger
 	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(VK_CONTROL)) && (GetAsyncKeyState(0x4C) & 1)) //ALT + CTRL + L toggles logger
 		logger = !logger;
-	if (palFont && logger) //&& countnum >= 0)
+	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(0x4C)) && (GetAsyncKeyState(VK_CONTROL) & 1)) //ALT + CTRL + L toggles logger
+		logger = !logger;
+	if (lpubFont && logger) //&& countnum >= 0)
 	{
 		char szString[255];
 		sprintf_s(szString, "countnum = %d", countnum);
-		DrawStrin(palFont, 220, 100, White, (char*)&szString[0]);
-		DrawStrin(palFont, 220, 110, Yellow, "hold P to +");
-		DrawStrin(palFont, 220, 120, Yellow, "hold O to -");
-		DrawStrin(palFont, 220, 130, Green, "press I to log");
+		DrawlpubStrin(lpubFont, 220, 100, White, (char*)&szString[0]);
+		DrawlpubStrin(lpubFont, 220, 110, Yellow, "hold P to +");
+		DrawlpubStrin(lpubFont, 220, 120, Yellow, "hold O to -");
+		DrawlpubStrin(lpubFont, 220, 130, Green, "press I to log");
 	}
 	*/
 
@@ -669,7 +692,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 //==========================================================================================================================
 
-class WinQuery1338343904 : public IDirect3DQuery9
+class CreatQuerylpub : public IDirect3DQuery9
 {
 public:
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj)
@@ -727,9 +750,9 @@ HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, 
 	//Anti-occlusion v2 (used by wallhack to see models through walls at all distances, reduces fps, on/off requires vid_restart F11 or alt + enter)
 	if(occlusion == 1 && Type == D3DQUERYTYPE_OCCLUSION)
 	{
-		*pQuery = new WinQuery1338343904;
+		*pQuery = new CreatQuerylpub;
 
-		((WinQuery1338343904*)*pQuery)->mtype = Type;
+		((CreatQuerylpub*)*pQuery)->mtype = Type;
 
 		return D3D_OK;
 	}
@@ -760,15 +783,15 @@ HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pP
 {
 	DeleteSurfaces();
 
-	if (palFont)
-		palFont->OnLostDevice();
+	if (lpubFont)
+		lpubFont->OnLostDevice();
 
 	HRESULT ResetReturn = Reset_orig(pDevice, pPresentationParameters);
 	
 	if (SUCCEEDED(ResetReturn))
 	{
-		if (palFont)
-			palFont->OnResetDevice();
+		if (lpubFont)
+			lpubFont->OnResetDevice();
 	}
 
 	return ResetReturn;
@@ -806,7 +829,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 	mStage = Sampler;
 
-	if((aimbot == 1||aimbot == 2)&&(decl->Type == 8 && numElements == 3 && mStartRegister == 6 && mVector4fCount == 2 && Sampler == 0 && pTexture))//vSize == 476 && pSize == 416 //reduce fps loss
+	if((esp > 0 || aimbot > 0)&&(decl->Type == 8 && numElements == 3 && mStartRegister == 6 && mVector4fCount == 2 && Sampler == 0 && pTexture))//reduce fps loss
 	{//1
 		pCurrentTex = static_cast<IDirect3DTexture9*>(pTexture);
 
@@ -821,7 +844,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 				goto out;
 			}
 
-			if (SUCCEEDED(pCurrentTex->GetLevelDesc(0, &surfaceDesc)))//can crash after game shuts down
+			if (SUCCEEDED(pCurrentTex->GetLevelDesc(0, &surfaceDesc)))//
 			if (surfaceDesc.Pool == D3DPOOL_MANAGED && pCurrentTex->GetType() == D3DRTYPE_TEXTURE) //reduce fps loss
 			{
 				dWidth = surfaceDesc.Width;
@@ -833,21 +856,17 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 				//if ((surfaceDesc.Width == 12 && surfaceDesc.Height == 8 && surfaceDesc.Format == 894720068 || surfaceDesc.Width == 1024 && surfaceDesc.Height == 1024 && surfaceDesc.Format == 50) && (pCurrentTex->GetType() == D3DRTYPE_TEXTURE))//
 				//{
 					D3DLOCKED_RECT pLockedRect;
-
+					
 					if (pCurrentTex->LockRect(0, &pLockedRect, NULL, D3DLOCK_READONLY | D3DLOCK_DONOTWAIT | D3DLOCK_NOSYSLOCK) == S_OK)
+					//if (pCurrentTex->LockRect(0, &pLockedRect, NULL, D3DLOCK_READONLY) == S_OK)
 					//pCurrentTex->LockRect(0, &pLockedRect, NULL, D3DLOCK_NOOVERWRITE | D3DLOCK_READONLY);
 					//pCurrentTex->LockRect(0, &pLockedRect, NULL, D3DLOCK_NOOVERWRITE | D3DLOCK_NOSYSLOCK | D3DLOCK_DONOTWAIT | D3DLOCK_READONLY);
 
-					//if (&pLockedRect != NULL && pLockedRect.pBits != NULL && pLockedRect.Pitch != NULL)
 					if (pLockedRect.pBits != NULL)
-					{
 						// get crc from the algorithm
-						pCRC = QuickPChecksm((DWORD*)pLockedRect.pBits, pLockedRect.Pitch);
-						pCurrentTex->UnlockRect(0);
-						//pCurrentTex->Release();
-					}
-					//pCurrentTex->UnlockRect(0);
-				//}
+						qlCRC = QuicklpubChecksum((DWORD*)pLockedRect.pBits, pLockedRect.Pitch);
+					pCurrentTex->UnlockRect(0);
+					
 			}
 		//}
 	}
@@ -858,7 +877,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 //==========================================================================================================================
 
-DWORD WINAPI PalD3D(__in  LPVOID lpParameter)
+DWORD WINAPI lpubD3D(__in  LPVOID lpParameter)
 {
 	HWND WindWND = NULL;
 	while (!WindWND)
@@ -880,7 +899,7 @@ DWORD WINAPI PalD3D(__in  LPVOID lpParameter)
 	IDirect3D9* d3d = NULL;
 	IDirect3DDevice9* d3ddev = NULL;
 
-	HWND tmpWnd = CreateWindowA("BUTTON", "PalaD3D", WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, PalHand, NULL);
+	HWND tmpWnd = CreateWindowA("BUTTON", "lpubaD3D", WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, lpubHand, NULL);
 	if(tmpWnd == NULL)
 	{
 		//Log("[DirectX] Failed to create temp window");
@@ -981,19 +1000,19 @@ BOOL WINAPI DllMain(HMODULE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 	switch (fdwReason)
 	{
 	case DLL_PROCESS_ATTACH: // A process is loading the DLL.
-		PalHand = hinstDLL;
+		lpubHand = hinstDLL;
 		DisableThreadLibraryCalls(hinstDLL); // disable unwanted thread notifications to reduce overhead
-		GetModuleFileNameA(hinstDLL, paldir, 512);
-		for (int i = (int)strlen(paldir); i > 0; i--)
+		GetModuleFileNameA(hinstDLL, lpubdir, 512);
+		for (int i = (int)strlen(lpubdir); i > 0; i--)
 		{
-			if (paldir[i] == '\\')
+			if (lpubdir[i] == '\\')
 			{
-				paldir[i + 1] = 0;
+				lpubdir[i + 1] = 0;
 				break;
 			}
 		}
 
-		CreateThread(0, 0, PalD3D, 0, 0, 0); //init our hooks
+		CreateThread(0, 0, lpubD3D, 0, 0, 0); //init our hooks
 		break;
 
 	case DLL_PROCESS_DETACH: // A process unloads the DLL.

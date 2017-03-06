@@ -23,7 +23,7 @@ using namespace std;
 
 //==========================================================================================================================
 
-HMODULE PalHand;
+HMODULE lpubHand;
 
 //Stride
 UINT Stride;
@@ -49,10 +49,10 @@ UINT pSize;
 
 //texture crc
 IDirect3DTexture9* pCurrentTex = NULL;
-DWORD pCRC;
+DWORD qlCRC;
 int dWidth;
 int dHeight;
-int dFormat;
+//int dFormat;
 int mStage;
 
 D3DVIEWPORT9 Viewport; //use this viewport
@@ -64,7 +64,7 @@ float ScreenCY;
 //int countnum = -1;
 
 //features
-int wallmhack = 1;				//wallmhack
+int wallhack = 1;				//wallhack
 int occlusion = 1;				//occlusion exploit
 
 //aimbot settings
@@ -75,9 +75,9 @@ int aimsens = 3;				//aim sensitivity, makes aim smoother
 int aimfov = 6;					//aim field of view in % 
 int aimheight = 2;				//aim height value for mensa, low value = aims heigher, high values aims lower
 int aimheightxy = 1;			//real value, aimheight * 4 + 27
-int esp = 0;					//anim pic esp
+int esp = 2;					//anim pic esp
 
-int usehumanaim = 1;			//human aim sensitivity value
+int usehumanaim = 0;			//human aim sensitivity value
 int aim_pause = 5;
 bool after_kill = false;
 bool smooth_on = false;
@@ -104,11 +104,11 @@ DWORD dwTime1 = 0; //windowsuptime
 //==========================================================================================================================
 
 // getdir & log
-char paldir[320];
-char* GetPalDirFile(char *plname)
+char lpubdir[320];
+char* GetlpubDirFile(char *plname)
 {
 	static char pldir[320];
-	strcpy_s(pldir, paldir);
+	strcpy_s(pldir, lpubdir);
 	strcat_s(pldir, plname);
 	return pldir;
 }
@@ -123,22 +123,22 @@ void Log(const char *fmt, ...)
 	vsprintf_s(text, fmt, ap);
 	va_end(ap);
 
-	ofstream logfile(GetPalDirFile("log.txt"), ios::app);
+	ofstream logfile(GetlpubDirFile("log.txt"), ios::app);
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
 */
-DWORD QuickPChecksm(DWORD *pData, int size)
+DWORD QuicklpubChecksum(DWORD *pDatar, int size)
 {
-	if (!pData) { return 0x0; }
+	if (!pDatar) { return 0x0; }
 
 	DWORD sum;
 	DWORD tmp;
-	sum = *pData;
+	sum = *pDatar;
 
 	for (int i = 1; i < (size / 4); i++)
 	{
-		tmp = pData[i];
+		tmp = pDatar[i];
 		tmp = (DWORD)(sum >> 29) + tmp;
 		tmp = (DWORD)(sum >> 17) + tmp;
 		sum = (DWORD)(sum << 3) ^ tmp;
@@ -148,35 +148,7 @@ DWORD QuickPChecksm(DWORD *pData, int size)
 }
 
 //==========================================================================================================================
-/*
-void mmousemove(int myX, int myY)
-{
-	INPUT Input = { 0 };
-	Input.type = INPUT_MOUSE;
-	Input.mi.dx = myX;
-	Input.mi.dy = myY;
-	Input.mi.dwFlags = MOUSEEVENTF_MOVE;
-	SendInput(1, &Input, sizeof(INPUT)); // Move Mouse
-}
 
-void LLeftClickDown()
-{
-	INPUT    Input = { 0 };
-	// left down 
-	Input.type = INPUT_MOUSE;
-	Input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-	SendInput(1, &Input, sizeof(INPUT));
-}
-
-void LLeftClickUp()
-{
-	INPUT    Input = { 0 };
-	//::ZeroMemory(&Input, sizeof(INPUT));
-	Input.type = INPUT_MOUSE;
-	Input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-	SendInput(1, &Input, sizeof(INPUT));
-}
-*/
 //get distance
 float GetmDst(float Xx, float Yy, float xX, float yY)
 {
@@ -433,7 +405,7 @@ void Save(char* szSection, char* szKey, int iValue, LPCSTR file)
 {
 char szValue[255];
 sprintf_s(szValue, "%d", iValue);
-WritePrivateProfileString(szSection, szKey, szValue, file);
+WritelpubateProfileString(szSection, szKey, szValue, file);
 }
 */
 //-----------------------------------------------------------------------------
@@ -443,18 +415,18 @@ WritePrivateProfileString(szSection, szKey, szValue, file);
 /*
 int Load(char* szSection, char* szKey, int iDefaultValue, LPCSTR file)
 {
-int iResult = GetPrivateProfileInt(szSection, szKey, iDefaultValue, file);
+int iResult = GetlpubateProfileInt(szSection, szKey, iDefaultValue, file);
 return iResult;
 }
 */
 
 #include <string>
 #include <fstream>
-void SaveCfg()
+void SavelpubCfg()
 {
 	ofstream fout;
-	fout.open(GetPalDirFile("palad3d.ini"), ios::trunc);
-	fout << "Wallhack " << wallmhack << endl;
+	fout.open(GetlpubDirFile("lpubad3d.ini"), ios::trunc);
+	fout << "Wallhack " << wallhack << endl;
 	fout << "Occlusion " << occlusion << endl;
 	fout << "Esp " << esp << endl;
 	fout << "Aimbot " << aimbot << endl;
@@ -468,12 +440,12 @@ void SaveCfg()
 	fout.close();
 }
 
-void LoadCfg()
+void LoadlpubCfg()
 {
 	ifstream fin;
 	string Word = "";
-	fin.open(GetPalDirFile("palad3d.ini"), ifstream::in);
-	fin >> Word >> wallmhack;
+	fin.open(GetlpubDirFile("lpubad3d.ini"), ifstream::in);
+	fin >> Word >> wallhack;
 	fin >> Word >> occlusion;
 	fin >> Word >> esp;
 	fin >> Word >> aimbot;
@@ -488,46 +460,6 @@ void LoadCfg()
 }
 
 //==========================================================================================================================
-/*
-// colors
-#define Green				D3DCOLOR_ARGB(255, 000, 255, 000)
-#define Red					D3DCOLOR_ARGB(255, 255, 000, 000)
-#define Blue				D3DCOLOR_ARGB(255, 000, 000, 255)
-#define Orange				D3DCOLOR_ARGB(255, 255, 165, 000)
-#define Yellow				D3DCOLOR_ARGB(255, 255, 255, 000)
-#define Pink				D3DCOLOR_ARGB(255, 255, 192, 203)
-#define Cyan				D3DCOLOR_ARGB(255, 000, 255, 255)
-#define Purple				D3DCOLOR_ARGB(255, 160, 032, 240)
-#define Black				D3DCOLOR_ARGB(255, 000, 000, 000) 
-#define White				D3DCOLOR_ARGB(255, 255, 255, 255)
-#define Grey				D3DCOLOR_ARGB(255, 112, 112, 112)
-#define SteelBlue			D3DCOLOR_ARGB(255, 033, 104, 140)
-#define LightSteelBlue		D3DCOLOR_ARGB(255, 201, 255, 255)
-#define LightBlue			D3DCOLOR_ARGB(255, 026, 140, 306)
-#define Salmon				D3DCOLOR_ARGB(255, 196, 112, 112)
-#define Brown				D3DCOLOR_ARGB(255, 168, 099, 020)
-#define Teal				D3DCOLOR_ARGB(255, 038, 140, 140)
-#define Lime				D3DCOLOR_ARGB(255, 050, 205, 050)
-#define ElectricLime		D3DCOLOR_ARGB(255, 204, 255, 000)
-#define Gold				D3DCOLOR_ARGB(255, 255, 215, 000)
-#define OrangeRed			D3DCOLOR_ARGB(255, 255, 69, 0)
-#define GreenYellow			D3DCOLOR_ARGB(255, 173, 255, 047)
-#define AquaMarine			D3DCOLOR_ARGB(255, 127, 255, 212)
-#define SkyBlue				D3DCOLOR_ARGB(255, 000, 191, 255)
-#define SlateBlue			D3DCOLOR_ARGB(255, 132, 112, 255)
-#define Crimson				D3DCOLOR_ARGB(255, 220, 020, 060)
-#define DarkOliveGreen		D3DCOLOR_ARGB(255, 188, 238, 104)
-#define PaleGreen			D3DCOLOR_ARGB(255, 154, 255, 154)
-#define DarkGoldenRod		D3DCOLOR_ARGB(255, 255, 185, 015)
-#define FireBrick			D3DCOLOR_ARGB(255, 255, 048, 048)
-#define DarkBlue			D3DCOLOR_ARGB(255, 000, 000, 204)
-#define DarkerBlue			D3DCOLOR_ARGB(255, 000, 000, 153)
-#define DarkYellow			D3DCOLOR_ARGB(255, 255, 204, 000)
-#define LightYellow			D3DCOLOR_ARGB(255, 255, 255, 153)
-#define DarkOutline			D3DCOLOR_ARGB(255, 37,   48,  52)
-#define TBlack				D3DCOLOR_ARGB(180, 000, 000, 000) 
-*/
-
 #define White				D3DCOLOR_ARGB(255, 255, 255, 255)
 #define Yellow				D3DCOLOR_ARGB(255, 255, 255, 0)
 #define TBlack				D3DCOLOR_ARGB(180, 0, 0, 0) 
@@ -546,7 +478,7 @@ int PosY = 27;
 
 int Show = false; //off by default
 
-POINT cPos;
+POINT lpubPos;
 
 #define ItemColorOn Green
 #define ItemColorOff Red
@@ -555,16 +487,15 @@ POINT cPos;
 #define KategorieFarbe Yellow
 #define ItemText White
 
-LPD3DXFONT palFont; //font
-//bool m_bCreated = false;
+LPD3DXFONT lpubFont; //font
 
 int CheckTab(int x, int y, int w, int h)
 {
 	if (Show)
 	{
-		GetCursorPos(&cPos);
-		ScreenToClient(GetForegroundWindow(), &cPos);
-		if (cPos.x > x && cPos.x < x + w && cPos.y > y && cPos.y < y + h)
+		GetCursorPos(&lpubPos);
+		ScreenToClient(GetForegroundWindow(), &lpubPos);
+		if (lpubPos.x > x && lpubPos.x < x + w && lpubPos.y > y && lpubPos.y < y + h)
 		{
 			if (GetAsyncKeyState(VK_LBUTTON) & 1)
 			{
@@ -634,28 +565,28 @@ VOID DrawBox(LPDIRECT3DDEVICE9 Device, INT x, INT y, INT w, INT h, DWORD BoxColo
 	DrawBorder(Device, x, y, w, h, 1, BoxColor);
 }
 
-void WriteTex(int x, int y, DWORD color, char *text)
+void WritelpubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	palFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
+	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
 }
 
-void lWriteTex(int x, int y, DWORD color, char *text)
+void lWritelpubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	palFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
+	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
 }
 
-void cWriteTex(int x, int y, DWORD color, char *text)
+void cWritelpubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	palFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
+	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
 }
 
-HRESULT DrawStrin(LPD3DXFONT palFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
+HRESULT DrawlpubStrin(LPD3DXFONT lpubFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
 {
 	HRESULT hRet;
 
@@ -673,8 +604,8 @@ HRESULT DrawStrin(LPD3DXFONT palFont, INT X, INT Y, DWORD dColor, CONST PCHAR cS
 
 	if (SUCCEEDED(hRet))
 	{
-		palFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
-		hRet = palFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
+		lpubFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
+		hRet = lpubFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
 	}
 
 	return hRet;
@@ -695,13 +626,13 @@ void Categor(LPDIRECT3DDEVICE9 pDevice, char *text)
 		if (mensaSelect == Current)
 			ColorText = ItemCurrent;
 
-		WriteTex(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
-		lWriteTex(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
+		WritelpubTex(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
+		lWritelpubTex(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
 		Current++;
 	}
 }
 
-void AddIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
+void AddlpubIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
 {
 	if (Show)
 	{
@@ -749,104 +680,104 @@ void AddIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int Max
 			ColorText = ItemCurrent;
 
 
-		WriteTex(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
-		WriteTex(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
+		WritelpubTex(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
+		WritelpubTex(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
 
-		lWriteTex(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
-		lWriteTex(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
+		lWritelpubTex(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
+		lWritelpubTex(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
 		Current++;
 	}
 }
 
 //=====================================================================================================================
 
-LPD3DXSPRITE palSprite0, palSprite1, palSprite2, palSprite3, palSprite4, palSprite5, palSprite6, palSprite7, palSprite8, palSprite9, palSprite10, palSprite11, palSprite12, palSprite13 = NULL; //mensa
+LPD3DXSPRITE lpubSprite0, lpubSprite1, lpubSprite2, lpubSprite3, lpubSprite4, lpubSprite5, lpubSprite6, lpubSprite7, lpubSprite8, lpubSprite9, lpubSprite10, lpubSprite11, lpubSprite12, lpubSprite13 = NULL; //mensa
 LPD3DXSPRITE lpEsp0, lpEsp1, lpEsp2, lpEsp3, lpEsp4, lpEsp5, lpEsp6, lpEsp7, lpEsp8, lpEsp9, lpEsp10, lpEsp11, lpEsp12, lpEsp13, lpEsp14 = NULL; //esp
-LPDIRECT3DTEXTURE9 palSpriteImage0, palSpriteImage1, palSpriteImage2, palSpriteImage3, palSpriteImage4, palSpriteImage5, palSpriteImage6, palSpriteImage7, palSpriteImage8, palSpriteImage9, palSpriteImage10, palSpriteImage11, palSpriteImage12, palSpriteImage13, palSpriteImage14 = NULL; //mensa
+LPDIRECT3DTEXTURE9 lpubSpriteImage0, lpubSpriteImage1, lpubSpriteImage2, lpubSpriteImage3, lpubSpriteImage4, lpubSpriteImage5, lpubSpriteImage6, lpubSpriteImage7, lpubSpriteImage8, lpubSpriteImage9, lpubSpriteImage10, lpubSpriteImage11, lpubSpriteImage12, lpubSpriteImage13, lpubSpriteImage14 = NULL; //mensa
 LPDIRECT3DTEXTURE9 lpEspImage0, lpEspImage1, lpEspImage2, lpEspImage3, lpEspImage4, lpEspImage5, lpEspImage6, lpEspImage7, lpEspImage8, lpEspImage9, lpEspImage10, lpEspImage11, lpEspImage12, lpEspImage13, lpEspImage14, lpEspImage15 = NULL; //esp
-bool SpriteSmallCreate_d1, SpriteSmallCreate_d2 = false;
+bool SpritelpubCreate_d1, SpritelpubCreate_d2 = false;
 
-bool PalaCreateSmallSprite(IDirect3DDevice9* pd3dDevice)
+bool lpubaCreateSmallSprite(IDirect3DDevice9* pd3dDevice)
 {
 	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\menu\\Menu0.png"), &palSpriteImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame1.png"), &palSpriteImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame2.png"), &palSpriteImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame3.png"), &palSpriteImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame4.png"), &palSpriteImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame5.png"), &palSpriteImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame6.png"), &palSpriteImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame7.png"), &palSpriteImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame8.png"), &palSpriteImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame9.png"), &palSpriteImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame10.png"), &palSpriteImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame11.png"), &palSpriteImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame12.png"), &palSpriteImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\greenwater\\Frame13.png"), &palSpriteImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\menu\\Menu0.png"), &lpubSpriteImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame1.png"), &lpubSpriteImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame2.png"), &lpubSpriteImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame3.png"), &lpubSpriteImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame4.png"), &lpubSpriteImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame5.png"), &lpubSpriteImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame6.png"), &lpubSpriteImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame7.png"), &lpubSpriteImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame8.png"), &lpubSpriteImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame9.png"), &lpubSpriteImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame10.png"), &lpubSpriteImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame11.png"), &lpubSpriteImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame12.png"), &lpubSpriteImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame13.png"), &lpubSpriteImage13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
 		//bSpriteCreated1 = detected?
-		SpriteSmallCreate_d1 = false;
+		SpritelpubCreate_d1 = false;
 		return false;
 	}
 
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite0);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite1);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite2);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite3);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite4);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite5);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite6);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite7);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite8);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite9);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite10);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite11);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite12);
-	hr = D3DXCreateSprite(pd3dDevice, &palSprite13);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite0);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite1);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite2);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite3);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite4);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite5);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite6);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite7);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite8);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite9);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite10);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite11);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite12);
+	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite1 failed");
-		SpriteSmallCreate_d1 = false;
+		SpritelpubCreate_d1 = false;
 		return false;
 	}
 
-	SpriteSmallCreate_d1 = true;
+	SpritelpubCreate_d1 = true;
 	
 	return true;
 }
 
-bool PalaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
+bool lpubaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
 {
 	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetPalDirFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
 	
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
 		//bSpriteCreated2 = detected?
-		SpriteSmallCreate_d2 = false;
+		SpritelpubCreate_d2 = false;
 		return false;
 	}
 
@@ -869,11 +800,11 @@ bool PalaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite2 failed");
-		SpriteSmallCreate_d2 = false;
+		SpritelpubCreate_d2 = false;
 		return false;
 	}
 
-	SpriteSmallCreate_d2 = true;
+	SpritelpubCreate_d2 = true;
 	
 	return true;
 }
@@ -892,35 +823,35 @@ void SafeRelease(COMObject*& pRes)
 
 // This will get called before Device::Clear(). If the device has been reset
 // then all the work surfaces will be created again.
-void PrePalClear(IDirect3DDevice9* ddevice)
+void PrelpubClear(IDirect3DDevice9* ddevice)
 {
-	if (!SpriteSmallCreate_d1)
-		PalaCreateSmallSprite(ddevice);
+	if (!SpritelpubCreate_d1)
+		lpubaCreateSmallSprite(ddevice);
 
-	if (!SpriteSmallCreate_d2)
-		PalaCreateSmallSprite2(ddevice);
+	if (!SpritelpubCreate_d2)
+		lpubaCreateSmallSprite2(ddevice);
 }
 
 // Delete work surfaces when device gets reset
 void DeleteSurfaces()
 {
-	if (palSprite0 != NULL)
+	if (lpubSprite0 != NULL)
 	{
-		//Log("SafeRelease(palSprite)");
-		SafeRelease(palSprite0);
-		SafeRelease(palSprite1);
-		SafeRelease(palSprite2);
-		SafeRelease(palSprite3);
-		SafeRelease(palSprite4);
-		SafeRelease(palSprite5);
-		SafeRelease(palSprite6);
-		SafeRelease(palSprite7);
-		SafeRelease(palSprite8);
-		SafeRelease(palSprite9);
-		SafeRelease(palSprite10);
-		SafeRelease(palSprite11);
-		SafeRelease(palSprite12);
-		SafeRelease(palSprite13);
+		//Log("SafeRelease(lpubSprite)");
+		SafeRelease(lpubSprite0);
+		SafeRelease(lpubSprite1);
+		SafeRelease(lpubSprite2);
+		SafeRelease(lpubSprite3);
+		SafeRelease(lpubSprite4);
+		SafeRelease(lpubSprite5);
+		SafeRelease(lpubSprite6);
+		SafeRelease(lpubSprite7);
+		SafeRelease(lpubSprite8);
+		SafeRelease(lpubSprite9);
+		SafeRelease(lpubSprite10);
+		SafeRelease(lpubSprite11);
+		SafeRelease(lpubSprite12);
+		SafeRelease(lpubSprite13);
 	}
 
 	if (lpEsp0 != NULL)
@@ -943,21 +874,21 @@ void DeleteSurfaces()
 		SafeRelease(lpEsp14);
 	}
 
-	SpriteSmallCreate_d1 = false;
-	SpriteSmallCreate_d2 = false;
+	SpritelpubCreate_d1 = false;
+	SpritelpubCreate_d2 = false;
 }
 
 // This gets called right before the frame is presented on-screen - Device::Present().
 // First, create the display text, FPS and info message, on-screen. Then then call
 // CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
-void PrePalPresent(IDirect3DDevice9* Device, int cx, int cy)
+void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (SpriteSmallCreate_d1)
+	if (SpritelpubCreate_d1)
 	{
-		if (palSprite0 != NULL)
+		if (lpubSprite0 != NULL)
 		{
 			D3DXVECTOR3 position;
 			position.x = (float)cx;
@@ -966,9 +897,9 @@ void PrePalPresent(IDirect3DDevice9* Device, int cx, int cy)
 
 			textOffsetLeft = (int)position.x; //for later to offset text from image
 
-			//palSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-			//palSprite1->Draw(palSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-			//palSprite1->End();
+			//lpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+			//lpubSprite1->Draw(lpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+			//lpubSprite1->End();
 
 			//position.x = 20.0f; //79.0f;
 			//position.y = 20.0f;
@@ -982,10 +913,10 @@ void PrePalPresent(IDirect3DDevice9* Device, int cx, int cy)
 			D3DXMatrixMultiply(&transMatrix0, &scaleMatrix0, &transMatrix0);
 
 			//draw mensa background pic
-			palSprite0->SetTransform(&transMatrix0);
-			palSprite0->Begin(D3DXSPRITE_ALPHABLEND);
-			palSprite0->Draw(palSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
-			palSprite0->End();
+			lpubSprite0->SetTransform(&transMatrix0);
+			lpubSprite0->Begin(D3DXSPRITE_ALPHABLEND);
+			lpubSprite0->Draw(lpubSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
+			lpubSprite0->End();
 
 			//anim timer
 			dwTime0 = GetTickCount() / 60;//50 speed
@@ -1009,106 +940,106 @@ void PrePalPresent(IDirect3DDevice9* Device, int cx, int cy)
 			//draw animation foreground pics
 			if (dwTime0 - dwStartTime0 == 0)
 			{
-				palSprite1->SetTransform(&transMatrix);
-				palSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite1->Draw(palSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite1->End();
+				lpubSprite1->SetTransform(&transMatrix);
+				lpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite1->Draw(lpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite1->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 1)
 			{
-				palSprite2->SetTransform(&transMatrix);
-				palSprite2->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite2->Draw(palSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite2->End();
+				lpubSprite2->SetTransform(&transMatrix);
+				lpubSprite2->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite2->Draw(lpubSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite2->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 2)
 			{
-				palSprite3->SetTransform(&transMatrix);
-				palSprite3->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite3->Draw(palSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite3->End();
+				lpubSprite3->SetTransform(&transMatrix);
+				lpubSprite3->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite3->Draw(lpubSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite3->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 3)
 			{
-				palSprite4->SetTransform(&transMatrix);
-				palSprite4->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite4->Draw(palSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite4->End();
+				lpubSprite4->SetTransform(&transMatrix);
+				lpubSprite4->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite4->Draw(lpubSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite4->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 4)
 			{
-				palSprite5->SetTransform(&transMatrix);
-				palSprite5->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite5->Draw(palSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite5->End();
+				lpubSprite5->SetTransform(&transMatrix);
+				lpubSprite5->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite5->Draw(lpubSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite5->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 5)
 			{
-				palSprite6->SetTransform(&transMatrix);
-				palSprite6->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite6->Draw(palSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite6->End();
+				lpubSprite6->SetTransform(&transMatrix);
+				lpubSprite6->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite6->Draw(lpubSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite6->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 6)
 			{
-				palSprite7->SetTransform(&transMatrix);
-				palSprite7->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite7->Draw(palSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite7->End();
+				lpubSprite7->SetTransform(&transMatrix);
+				lpubSprite7->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite7->Draw(lpubSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite7->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 7)
 			{
-				palSprite8->SetTransform(&transMatrix);
-				palSprite8->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite8->Draw(palSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite8->End();
+				lpubSprite8->SetTransform(&transMatrix);
+				lpubSprite8->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite8->Draw(lpubSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite8->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 8)
 			{
-				palSprite9->SetTransform(&transMatrix);
-				palSprite9->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite9->Draw(palSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite9->End();
+				lpubSprite9->SetTransform(&transMatrix);
+				lpubSprite9->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite9->Draw(lpubSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite9->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 9)
 			{
-				palSprite10->SetTransform(&transMatrix);
-				palSprite10->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite10->Draw(palSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite10->End();
+				lpubSprite10->SetTransform(&transMatrix);
+				lpubSprite10->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite10->Draw(lpubSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite10->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 10)
 			{
-				palSprite11->SetTransform(&transMatrix);
-				palSprite11->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite11->Draw(palSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite11->End();
+				lpubSprite11->SetTransform(&transMatrix);
+				lpubSprite11->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite11->Draw(lpubSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite11->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 11)
 			{
-				palSprite12->SetTransform(&transMatrix);
-				palSprite12->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite12->Draw(palSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite12->End();
+				lpubSprite12->SetTransform(&transMatrix);
+				lpubSprite12->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite12->Draw(lpubSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite12->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 12)
 			{
-				palSprite13->SetTransform(&transMatrix);
-				palSprite13->Begin(D3DXSPRITE_ALPHABLEND);
-				palSprite13->Draw(palSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
-				palSprite13->End();
+				lpubSprite13->SetTransform(&transMatrix);
+				lpubSprite13->Begin(D3DXSPRITE_ALPHABLEND);
+				lpubSprite13->Draw(lpubSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
+				lpubSprite13->End();
 			}
 		}
 	}
@@ -1116,12 +1047,12 @@ void PrePalPresent(IDirect3DDevice9* Device, int cx, int cy)
 	// draw text
 }
 
-void PrePalPresent2(IDirect3DDevice9* Device, int cx, int cy)
+void PrelpubPresent2(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (SpriteSmallCreate_d2)
+	if (SpritelpubCreate_d2)
 	{
 		if (lpEsp0 != NULL)
 		{
@@ -1269,6 +1200,7 @@ void PrePalPresent2(IDirect3DDevice9* Device, int cx, int cy)
 
 // menu part
 char *opt_OnOff[] = { "[OFF]", "[On]" };
+char *opt_OnEsp[] = { "[OFF]", "[Pic]", "[Text]" };
 char *opt_WhChams[] = { "[OFF]", "[On]", "[On + Glow]", "[On + Chams]" };
 char *opt_Teams[] = { "[OFF]", "[Mode 1]", "[Mode 2]", "[Compatibility]" };
 char *opt_Keys[] = { "[OFF]", "[Shift]", "[RMouse]", "[LMouse]", "[Ctrl]", "[Alt]", "[Space]", "[X]", "[C]" };
@@ -1278,21 +1210,21 @@ char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%
 char *opt_Aimhuman[] = { "[Off]", "[On sens 1]", "[On sens 2]", "[On sens 3]", "[On sens 4]", "[On sens 5]", "[On sens 6]", "[On sens 7]", "[On sens 8]", "[On sens 9]", "[On sens 10]" };
 char *opt_autoshoot[] = { "[OFF]", "[OnKeyDown]" };
 
-void DrawPalMenu(LPDIRECT3DDEVICE9 pDevice)
+void DrawlpubMenu(LPDIRECT3DDEVICE9 pDevice)
 {
 	if (GetAsyncKeyState(VK_INSERT) & 1)
 	{
 		Show = !Show;
 
 		//save settings
-		SaveCfg();
+		SavelpubCfg();
 
-		//Save("wallmhack", "wallmhack", wallmhack, GetPalDirFile("palaconfig.ini"));
+		//Save("wallhack", "wallhack", wallhack, GetlpubDirFile("lpubaconfig.ini"));
 
-		PlaySoundA(GetPalDirFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+		PlaySoundA(GetlpubDirFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 	}
 
-	if (Show && palFont)
+	if (Show && lpubFont)
 	{
 		if (GetAsyncKeyState(VK_UP) & 1)
 			mensaSelect--;
@@ -1305,22 +1237,22 @@ void DrawPalMenu(LPDIRECT3DDEVICE9 pDevice)
 		DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
 		DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
 		//draw mensa pic
-		PrePalPresent(pDevice, 20, 20);
-		//cWriteTex(172, 71, White, "Paladins D3D");
+		PrelpubPresent(pDevice, 20, 20);
+		//cWritelpubTex(172, 71, White, "Paladins D3D");
 
 		Current = 1;
 		//Categor(pDevice, " [D3D]");
-		AddIte(pDevice, " Wallhack", wallmhack, opt_WhChams, 3);
-		AddIte(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
-		AddIte(pDevice, " Esp", esp, opt_OnOff, 1);
-		AddIte(pDevice, " Aimbot", aimbot, opt_Teams, 3);
-		AddIte(pDevice, " Aimkey", aimkey, opt_Keys, 8);
-		AddIte(pDevice, " Aimsens", aimsens, opt_Sensitivity, 19);
-		AddIte(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
-		AddIte(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
-		AddIte(pDevice, " AimHuman", usehumanaim, opt_Aimhuman, 10);
-		AddIte(pDevice, " Autoshoot", autoshoot, opt_autoshoot, 1);
-		AddIte(pDevice, " Killsounds", killsounds, opt_OnOff, 1);
+		AddlpubIte(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
+		AddlpubIte(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
+		AddlpubIte(pDevice, " Esp", esp, opt_OnEsp, 2);
+		AddlpubIte(pDevice, " Aimbot", aimbot, opt_Teams, 3);
+		AddlpubIte(pDevice, " Aimkey", aimkey, opt_Keys, 8);
+		AddlpubIte(pDevice, " Aimsensitivity", aimsens, opt_Sensitivity, 19);
+		AddlpubIte(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
+		AddlpubIte(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
+		AddlpubIte(pDevice, " AimHuman", usehumanaim, opt_Aimhuman, 10);
+		AddlpubIte(pDevice, " Autoshoot", autoshoot, opt_autoshoot, 1);
+		AddlpubIte(pDevice, " Killsounds", killsounds, opt_OnOff, 1);
 
 		if (mensaSelect >= Current)
 			mensaSelect = 1;
