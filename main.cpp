@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.6c
+* Paladins D3D Hack Source V1.7
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -166,14 +166,14 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 	}
 
 	//pause aimbot after killing a target
-	if (usehumanaim > 0 && aim_pause > 0 && dWidth == 144 && dHeight == 176 && Stride == 8 && NumVertices == 8 && primCount == 10)
+	if (useaimhuman > 0 && aim_pause > 0 && dWidth == 144 && dHeight == 176 && Stride == 8 && NumVertices == 8 && primCount == 10)
 		after_kill = true;
 
 	//smooth aim while aiming
 	if (
-		(usehumanaim > 0 && Stride == 12 && NumVertices == 192 && primCount == 240) ||
-		(usehumanaim > 0 && dWidth == 136 && dHeight == 164 && Stride == 8 && NumVertices == 8 && primCount == 10) ||
-		(usehumanaim > 0 && dWidth == 164 && dHeight == 204 && Stride == 8 && NumVertices == 8 && primCount == 10)
+		(useaimhuman > 0 && Stride == 12 && NumVertices == 192 && primCount == 240) ||
+		(useaimhuman > 0 && dWidth == 136 && dHeight == 164 && Stride == 8 && NumVertices == 8 && primCount == 10) ||
+		(useaimhuman > 0 && dWidth == 164 && dHeight == 204 && Stride == 8 && NumVertices == 8 && primCount == 10)
 		)
 		smooth_on = true;
 
@@ -251,39 +251,39 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 //==========================================================================================================================
 
-bool DolpubInit = true;
+bool DompubInit = true;
 HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr) return EndScene_orig(pDevice);
 
 	//sprite
-	PrelpubClear(pDevice);
+	PrempubClear(pDevice);
 
-	if (DolpubInit)
+	if (DompubInit)
 	{
-		LoadlpubCfg();
+		LoadmpubCfg();
 
-		//wallhack = Load("wallhack", "wallhack", wallhack, GetDirectoryFile("lpubaconfig.ini"));
+		//wallhack = Load("wallhack", "wallhack", wallhack, GetDirectoryFile("mpubaconfig.ini"));
 
-		DolpubInit = false;
+		DompubInit = false;
 	}
 
-	if (lpubFont == NULL)
+	if (mpubFont == NULL)
 	{
-		HRESULT hr = D3DXCreateFont(pDevice, 14, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &lpubFont);
+		HRESULT hr = D3DXCreateFont(pDevice, 14, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &mpubFont);
 
 		if (FAILED(hr)) {
 			//Log("D3DXCreateFont failed");
 		}
 	}
 
-	if (lpubFont)
+	if (mpubFont)
 	{
-		DrawlpubMenu(pDevice);
+		DrawmpubMenu(pDevice);
 	}
 
 	//smooth after kill
-	if (usehumanaim > 0 && after_kill)
+	if (useaimhuman > 0 && after_kill)
 	{
 		//aimsens = slowsens;  //slow sens
 		//aimheight = 8; // body height
@@ -297,7 +297,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	}
 
 	//initial smooth
-	if (usehumanaim > 0 && smooth_on && !after_kill)
+	if (useaimhuman > 0 && smooth_on && !after_kill)
 	{
 		//aimsens = fastsens;   //fast sens
 		//aimheight = 3; //head "lock-on" height
@@ -313,7 +313,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 	}
 
 	//prevent tapfire aimlock (add smooth after releasing aimkey)
-	if (usehumanaim > 0 && !GetAsyncKeyState(Daimkey))
+	if (useaimhuman > 0 && !GetAsyncKeyState(Daimkey))
 	{
 		after_kill = true;
 	}
@@ -326,115 +326,115 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			int random = rand() % 36;
 
 			if (random == 0)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\assasin.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\assasin.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 1)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\bullseye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\bullseye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 2)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\dominating.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\dominating.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 3)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\doublekill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\doublekill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 4)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\eagleeye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\eagleeye.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 5)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\excellent.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\excellent.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 6)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\godlike.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\godlike.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 7)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\hattrick.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\hattrick.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 8)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\headhunter.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\headhunter.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 9)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\headshot.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\headshot.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 10)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\impressive.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\impressive.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 11)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\killingmachine.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\killingmachine.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 12)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\killingspree.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\killingspree.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 13)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\maniac.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\maniac.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 14)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\massacre.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\massacre.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 15)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\megakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\megakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 16)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\monsterkill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\monsterkill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 17)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\multikill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\multikill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 18)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\outstanding.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\outstanding.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 19)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\payback.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\payback.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 20)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\rampage.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\rampage.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 21)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\retribution.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\retribution.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 22)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\ultrakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\ultrakill.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 23)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\unreal.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\unreal.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 24)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\unstoppable.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\unstoppable.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 25)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\vengeance.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\vengeance.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 26)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\cheer\\cheer (1).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\cheer\\cheer (1).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 27)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (2).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (2).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 28)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (3).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (3).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 29)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (4).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (4).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 30)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (5).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (5).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 31)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (6).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (6).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 32)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (7).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (7).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 33)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (8).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (8).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 34)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (9).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (9).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 35)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (01).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (01).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			if (random == 36)
-				PlaySoundA(GetlpubDirFile("stuff\\sounds\\speech\\cheer (11).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+				PlaySoundA(GetmpubDirFile("stuff\\sounds\\speech\\cheer (11).wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 
 			sound = false;
 			soundpause = timeGetTime();
@@ -449,15 +449,15 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			//pic esp
 			if ((esp == 1 && EspHPBarInfo[i].iTeam == 1) && (EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1))
 			{
-				PrelpubPresent2(pDevice, (int)EspHPBarInfo[i].vOutX - 32, (int)EspHPBarInfo[i].vOutY - 20);
-				//DrawlpubString(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+				PrempubPresent2(pDevice, (int)EspHPBarInfo[i].vOutX - 32, (int)EspHPBarInfo[i].vOutY - 20);
+				//DrawmpubString(mpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
 			}
 
 			//text esp
-			if ((esp == 2 && EspHPBarInfo[i].iTeam == 2 && lpubFont) && (EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1))
+			if ((esp == 2 && EspHPBarInfo[i].iTeam == 2 && mpubFont) && (EspHPBarInfo[i].vOutX > 1 && EspHPBarInfo[i].vOutY > 1))
 			{
-				DrawlpubStrin(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "Enemy");
-				//DrawlpubStrin(lpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "%.f", (float)EspHPBarInfo.size());
+				DrawmpubStrin(mpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "Enemy");
+				//DrawmpubStrin(mpubFont, (int)EspHPBarInfo[i].vOutX, (int)EspHPBarInfo[i].vOutY, Green, "%.f", (float)EspHPBarInfo.size());
 			}
 		}
 	}
@@ -486,17 +486,17 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		{
 			//test w2s
 			//if (logger)
-			//DrawlpubString(lpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
-			//DrawlpubStrin(lpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, Green, "%.f", (float)AimHPBarInfo.size());
+			//DrawmpubString(mpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 255, 255, 255), "O");
+			//DrawmpubStrin(mpubFont, (int)AimHPBarInfo[i].vOutX, (int)AimHPBarInfo[i].vOutY, Green, "%.f", (float)AimHPBarInfo.size());
 
 			//aimfov
-			float radiusx = (aimfov*10.0f) * (ScreenCX / 100); 
-			float radiusy = (aimfov*10.0f) * (ScreenCY / 100); 
+			float radiusx = (aimfov*10.0f) * (ScreenCX / 100.0f); 
+			float radiusy = (aimfov*10.0f) * (ScreenCY / 100.0f); 
 
 			if (aimfov == 0)
 			{
-				radiusx = 5.0f * (ScreenCX / 100);
-				radiusy = 5.0f * (ScreenCY / 100);
+				radiusx = 5.0f * (ScreenCX / 100.0f);
+				radiusy = 5.0f * (ScreenCY / 100.0f);
 			}
 
 			//get crosshairdistance
@@ -523,25 +523,23 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			double DistX = AimHPBarInfo[BestTarget].vOutX - ScreenCX;
 			double DistY = AimHPBarInfo[BestTarget].vOutY - ScreenCY;
 
-			if (usehumanaim == 0)
+			DistX /= (1 + aimsens);
+			DistY /= (1 + aimsens);
+
+			if (useaimhuman > 0 && smooth_on && !after_kill)
 			{
-				DistX /= (1 + aimsens);
-				DistY /= (1 + aimsens);
+				//smooth aim
+				DistX /= (1 + useaimhuman * 2);
+				DistY /= (1 + useaimhuman * 2);
+			}
+			if (useaimhuman > 0 && after_kill)
+			{
+				//smooth aim
+				DistX /= (1 + useaimhuman + 16 * 2);
+				DistY /= (1 + useaimhuman + 16 * 2);
 			}
 
-			if (usehumanaim > 0 && smooth_on && !after_kill)
-			{
-				//smooth aim
-				DistX /= (1 + usehumanaim * 2);
-				DistY /= (1 + usehumanaim * 2);
-			}
-			else if (usehumanaim > 0 && after_kill)
-			{
-				//smooth aim
-				DistX /= (1 + usehumanaim + 16 * 2);
-				DistY /= (1 + usehumanaim + 16 * 2);
-			}
-			else
+			if (useaimhuman == 0)
 			{
 				DistX /= (1 + aimsens);
 				DistY /= (1 + aimsens);
@@ -578,17 +576,17 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		{
 			//test w2s
 			//if (logger)
-			//DrawlpubStrin(lpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
-			//DrawlpubStrin(lpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%.f", (float)AimTBarInfo.size());
+			//DrawmpubStrin(mpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, D3DCOLOR_ARGB(255, 0, 255, 0), "o");
+			//DrawmpubStrin(mpubFont, (int)AimTBarInfo[i].vOutX, (int)AimTBarInfo[i].vOutY, Green, "%.f", (float)AimTBarInfo.size());
 
 			//aimfov
-			float radiusx = (aimfov*20.0f) * (ScreenCX / 100); 
-			float radiusy = (aimfov*20.0f) * (ScreenCY / 100); 
+			float radiusx = (aimfov*20.0f) * (ScreenCX / 100.0f); 
+			float radiusy = (aimfov*20.0f) * (ScreenCY / 100.0f); 
 
 			if (aimfov == 0)
 			{
-				radiusx = 10.0f * (ScreenCX / 100);
-				radiusy = 10.0f * (ScreenCY / 100);
+				radiusx = 10.0f * (ScreenCX / 100.0f);
+				radiusy = 10.0f * (ScreenCY / 100.0f);
 			}
 
 			//get crosshairdistance
@@ -615,28 +613,26 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 			double DistX = AimTBarInfo[BestTarget].vOutX - ScreenCX;
 			double DistY = AimTBarInfo[BestTarget].vOutY - ScreenCY;
 
-			if (usehumanaim == 0)
+			DistX /= (1 + aimsens);
+			DistY /= (1 + aimsens);
+
+			if (useaimhuman > 0 && smooth_on && !after_kill)
 			{
-				DistX /= (1 + aimsens * 2);
-				DistY /= (1 + aimsens * 2);
+				//smooth aim
+				DistX /= (1 + useaimhuman * 2);
+				DistY /= (1 + useaimhuman * 2);
+			}
+			if (useaimhuman > 0 && after_kill)
+			{
+				//smooth aim
+				DistX /= (1 + useaimhuman + 16 * 2);
+				DistY /= (1 + useaimhuman + 16 * 2);
 			}
 
-			if (usehumanaim > 0 && smooth_on && !after_kill)
+			if (useaimhuman == 0)
 			{
-				//smooth aim
-				DistX /= (1 + usehumanaim *2);
-				DistY /= (1 + usehumanaim *2);
-			}
-			else if (usehumanaim > 0 && after_kill)
-			{
-				//smooth aim
-				DistX /= (1 + usehumanaim + 16 * 2);
-				DistY /= (1 + usehumanaim + 16 * 2);
-			}
-			else
-			{
-				DistX /= (1 + aimsens * 2);
-				DistY /= (1 + aimsens * 2);
+				DistX /= (1 + aimsens);
+				DistY /= (1 + aimsens);
 			}
 
 			//aim
@@ -676,14 +672,14 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 		logger = !logger;
 	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(0x4C)) && (GetAsyncKeyState(VK_CONTROL) & 1)) //ALT + CTRL + L toggles logger
 		logger = !logger;
-	if (lpubFont && logger) //&& countnum >= 0)
+	if (mpubFont && logger) //&& countnum >= 0)
 	{
 		char szString[255];
 		sprintf_s(szString, "countnum = %d", countnum);
-		DrawlpubStrin(lpubFont, 220, 100, White, (char*)&szString[0]);
-		DrawlpubStrin(lpubFont, 220, 110, Yellow, "hold P to +");
-		DrawlpubStrin(lpubFont, 220, 120, Yellow, "hold O to -");
-		DrawlpubStrin(lpubFont, 220, 130, Green, "press I to log");
+		DrawmpubStrin(mpubFont, 220, 100, White, (char*)&szString[0]);
+		DrawmpubStrin(mpubFont, 220, 110, Yellow, "hold P to +");
+		DrawmpubStrin(mpubFont, 220, 120, Yellow, "hold O to -");
+		DrawmpubStrin(mpubFont, 220, 130, Green, "press I to log");
 	}
 	*/
 
@@ -692,7 +688,7 @@ HRESULT APIENTRY EndScene_hook(IDirect3DDevice9* pDevice)
 
 //==========================================================================================================================
 
-class CreatQuerylpub : public IDirect3DQuery9
+class CreatQuerympub : public IDirect3DQuery9
 {
 public:
 	HRESULT WINAPI QueryInterface(REFIID riid, void** ppvObj)
@@ -750,9 +746,9 @@ HRESULT APIENTRY CreateQuery_hook(IDirect3DDevice9* pDevice, D3DQUERYTYPE Type, 
 	//Anti-occlusion v2 (used by wallhack to see models through walls at all distances, reduces fps, on/off requires vid_restart F11 or alt + enter)
 	if(occlusion == 1 && Type == D3DQUERYTYPE_OCCLUSION)
 	{
-		*pQuery = new CreatQuerylpub;
+		*pQuery = new CreatQuerympub;
 
-		((CreatQuerylpub*)*pQuery)->mtype = Type;
+		((CreatQuerympub*)*pQuery)->mtype = Type;
 
 		return D3D_OK;
 	}
@@ -783,15 +779,15 @@ HRESULT APIENTRY Reset_hook(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pP
 {
 	DeleteSurfaces();
 
-	if (lpubFont)
-		lpubFont->OnLostDevice();
+	if (mpubFont)
+		mpubFont->OnLostDevice();
 
 	HRESULT ResetReturn = Reset_orig(pDevice, pPresentationParameters);
 	
 	if (SUCCEEDED(ResetReturn))
 	{
-		if (lpubFont)
-			lpubFont->OnResetDevice();
+		if (mpubFont)
+			mpubFont->OnResetDevice();
 	}
 
 	return ResetReturn;
@@ -864,7 +860,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 					if (pLockedRect.pBits != NULL)
 						// get crc from the algorithm
-						qlCRC = QuicklpubChecksum((DWORD*)pLockedRect.pBits, pLockedRect.Pitch);
+						qlCRC = QuickmpubChecksum((DWORD*)pLockedRect.pBits, pLockedRect.Pitch);
 					pCurrentTex->UnlockRect(0);
 					
 			}
@@ -877,7 +873,7 @@ HRESULT APIENTRY SetTexture_hook(IDirect3DDevice9* pDevice, DWORD Sampler, IDire
 
 //==========================================================================================================================
 
-DWORD WINAPI lpubD3D(__in  LPVOID lpParameter)
+DWORD WINAPI mpubD3D(__in  LPVOID lpParameter)
 {
 	HWND WindWND = NULL;
 	while (!WindWND)
@@ -899,7 +895,7 @@ DWORD WINAPI lpubD3D(__in  LPVOID lpParameter)
 	IDirect3D9* d3d = NULL;
 	IDirect3DDevice9* d3ddev = NULL;
 
-	HWND tmpWnd = CreateWindowA("BUTTON", "lpubaD3D", WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, lpubHand, NULL);
+	HWND tmpWnd = CreateWindowA("BUTTON", "mpubaD3D", WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, mpubHand, NULL);
 	if(tmpWnd == NULL)
 	{
 		//Log("[DirectX] Failed to create temp window");
@@ -1000,19 +996,19 @@ BOOL WINAPI DllMain(HMODULE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 	switch (fdwReason)
 	{
 	case DLL_PROCESS_ATTACH: // A process is loading the DLL.
-		lpubHand = hinstDLL;
+		mpubHand = hinstDLL;
 		DisableThreadLibraryCalls(hinstDLL); // disable unwanted thread notifications to reduce overhead
-		GetModuleFileNameA(hinstDLL, lpubdir, 512);
-		for (int i = (int)strlen(lpubdir); i > 0; i--)
+		GetModuleFileNameA(hinstDLL, mpubdir, 512);
+		for (int i = (int)strlen(mpubdir); i > 0; i--)
 		{
-			if (lpubdir[i] == '\\')
+			if (mpubdir[i] == '\\')
 			{
-				lpubdir[i + 1] = 0;
+				mpubdir[i + 1] = 0;
 				break;
 			}
 		}
 
-		CreateThread(0, 0, lpubD3D, 0, 0, 0); //init our hooks
+		CreateThread(0, 0, mpubD3D, 0, 0, 0); //init our hooks
 		break;
 
 	case DLL_PROCESS_DETACH: // A process unloads the DLL.

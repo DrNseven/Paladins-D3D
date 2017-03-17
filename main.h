@@ -23,7 +23,7 @@ using namespace std;
 
 //==========================================================================================================================
 
-HMODULE lpubHand;
+HMODULE mpubHand;
 
 //Stride
 UINT Stride;
@@ -68,7 +68,7 @@ int wallhack = 1;				//wallhack
 int occlusion = 1;				//occlusion exploit
 
 //aimbot settings
-int aimbot = 2;
+int aimbot = 1;
 int aimkey = 2;
 DWORD Daimkey = VK_RBUTTON;		//aimkey
 int aimsens = 3;				//aim sensitivity, makes aim smoother
@@ -77,7 +77,7 @@ int aimheight = 2;				//aim height value for mensa, low value = aims heigher, hi
 int aimheightxy = 1;			//real value, aimheight * 4 + 27
 int esp = 2;					//anim pic esp
 
-int usehumanaim = 0;			//human aim sensitivity value
+int useaimhuman = 0;			//human aim sensitivity value
 int aim_pause = 5;
 bool after_kill = false;
 bool smooth_on = false;
@@ -104,11 +104,11 @@ DWORD dwTime1 = 0; //windowsuptime
 //==========================================================================================================================
 
 // getdir & log
-char lpubdir[320];
-char* GetlpubDirFile(char *plname)
+char mpubdir[320];
+char* GetmpubDirFile(char *plname)
 {
 	static char pldir[320];
-	strcpy_s(pldir, lpubdir);
+	strcpy_s(pldir, mpubdir);
 	strcat_s(pldir, plname);
 	return pldir;
 }
@@ -123,12 +123,12 @@ void Log(const char *fmt, ...)
 	vsprintf_s(text, fmt, ap);
 	va_end(ap);
 
-	ofstream logfile(GetlpubDirFile("log.txt"), ios::app);
+	ofstream logfile(GetmpubDirFile("log.txt"), ios::app);
 	if (logfile.is_open() && text)	logfile << text << endl;
 	logfile.close();
 }
 */
-DWORD QuicklpubChecksum(DWORD *pDatar, int size)
+DWORD QuickmpubChecksum(DWORD *pDatar, int size)
 {
 	if (!pDatar) { return 0x0; }
 
@@ -405,7 +405,7 @@ void Save(char* szSection, char* szKey, int iValue, LPCSTR file)
 {
 char szValue[255];
 sprintf_s(szValue, "%d", iValue);
-WritelpubateProfileString(szSection, szKey, szValue, file);
+WritempubateProfileString(szSection, szKey, szValue, file);
 }
 */
 //-----------------------------------------------------------------------------
@@ -415,17 +415,17 @@ WritelpubateProfileString(szSection, szKey, szValue, file);
 /*
 int Load(char* szSection, char* szKey, int iDefaultValue, LPCSTR file)
 {
-int iResult = GetlpubateProfileInt(szSection, szKey, iDefaultValue, file);
+int iResult = GetmpubateProfileInt(szSection, szKey, iDefaultValue, file);
 return iResult;
 }
 */
 
 #include <string>
 #include <fstream>
-void SavelpubCfg()
+void SavempubCfg()
 {
 	ofstream fout;
-	fout.open(GetlpubDirFile("lpubad3d.ini"), ios::trunc);
+	fout.open(GetmpubDirFile("mpubad3d.ini"), ios::trunc);
 	fout << "Wallhack " << wallhack << endl;
 	fout << "Occlusion " << occlusion << endl;
 	fout << "Esp " << esp << endl;
@@ -434,17 +434,17 @@ void SavelpubCfg()
 	fout << "Aimsens " << aimsens << endl;
 	fout << "Aimfov " << aimfov << endl;
 	fout << "Aimheight " << aimheight << endl;
-	fout << "AimHuman " << usehumanaim << endl;
+	fout << "AimHuman " << useaimhuman << endl;
 	fout << "Autoshoot " << autoshoot << endl;
 	fout << "Killsounds " << killsounds << endl;
 	fout.close();
 }
 
-void LoadlpubCfg()
+void LoadmpubCfg()
 {
 	ifstream fin;
 	string Word = "";
-	fin.open(GetlpubDirFile("lpubad3d.ini"), ifstream::in);
+	fin.open(GetmpubDirFile("mpubad3d.ini"), ifstream::in);
 	fin >> Word >> wallhack;
 	fin >> Word >> occlusion;
 	fin >> Word >> esp;
@@ -453,7 +453,7 @@ void LoadlpubCfg()
 	fin >> Word >> aimsens;
 	fin >> Word >> aimfov;
 	fin >> Word >> aimheight;
-	fin >> Word >> usehumanaim;
+	fin >> Word >> useaimhuman;
 	fin >> Word >> autoshoot;
 	fin >> Word >> killsounds;
 	fin.close();
@@ -478,7 +478,7 @@ int PosY = 27;
 
 int Show = false; //off by default
 
-POINT lpubPos;
+POINT mpubPos;
 
 #define ItemColorOn Green
 #define ItemColorOff Red
@@ -487,15 +487,15 @@ POINT lpubPos;
 #define KategorieFarbe Yellow
 #define ItemText White
 
-LPD3DXFONT lpubFont; //font
+LPD3DXFONT mpubFont; //font
 
 int CheckTab(int x, int y, int w, int h)
 {
 	if (Show)
 	{
-		GetCursorPos(&lpubPos);
-		ScreenToClient(GetForegroundWindow(), &lpubPos);
-		if (lpubPos.x > x && lpubPos.x < x + w && lpubPos.y > y && lpubPos.y < y + h)
+		GetCursorPos(&mpubPos);
+		ScreenToClient(GetForegroundWindow(), &mpubPos);
+		if (mpubPos.x > x && mpubPos.x < x + w && mpubPos.y > y && mpubPos.y < y + h)
 		{
 			if (GetAsyncKeyState(VK_LBUTTON) & 1)
 			{
@@ -565,28 +565,28 @@ VOID DrawBox(LPDIRECT3DDEVICE9 Device, INT x, INT y, INT w, INT h, DWORD BoxColo
 	DrawBorder(Device, x, y, w, h, 1, BoxColor);
 }
 
-void WritelpubTex(int x, int y, DWORD color, char *text)
+void WritempubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
+	mpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_LEFT, color);
 }
 
-void lWritelpubTex(int x, int y, DWORD color, char *text)
+void lWritempubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
+	mpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_RIGHT, color);
 }
 
-void cWritelpubTex(int x, int y, DWORD color, char *text)
+void cWritempubTex(int x, int y, DWORD color, char *text)
 {
 	RECT rect;
 	SetRect(&rect, x, y, x, y);
-	lpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
+	mpubFont->DrawText(0, text, -1, &rect, DT_NOCLIP | DT_CENTER, color);
 }
 
-HRESULT DrawlpubStrin(LPD3DXFONT lpubFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
+HRESULT DrawmpubStrin(LPD3DXFONT mpubFont, INT X, INT Y, DWORD dColor, CONST PCHAR cString, ...)
 {
 	HRESULT hRet;
 
@@ -604,8 +604,8 @@ HRESULT DrawlpubStrin(LPD3DXFONT lpubFont, INT X, INT Y, DWORD dColor, CONST PCH
 
 	if (SUCCEEDED(hRet))
 	{
-		lpubFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
-		hRet = lpubFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
+		mpubFont->DrawTextA(NULL, buf, -1, &rc[0], DT_NOCLIP, 0xFF000000);
+		hRet = mpubFont->DrawTextA(NULL, buf, -1, &rc[1], DT_NOCLIP, dColor);
 	}
 
 	return hRet;
@@ -626,13 +626,13 @@ void Categor(LPDIRECT3DDEVICE9 pDevice, char *text)
 		if (mensaSelect == Current)
 			ColorText = ItemCurrent;
 
-		WritelpubTex(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
-		lWritelpubTex(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
+		WritempubTex(PosX + 44, PosY+50 + (Current * 15) - 1, ColorText, text);
+		lWritempubTex(PosX + 236, PosY+50 + (Current * 15) - 1, ColorText, "[-]");
 		Current++;
 	}
 }
 
-void AddlpubIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
+void AddmpubIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int MaxValue)
 {
 	if (Show)
 	{
@@ -680,104 +680,104 @@ void AddlpubIte(LPDIRECT3DDEVICE9 pDevice, char *text, int &var, char **opt, int
 			ColorText = ItemCurrent;
 
 
-		WritelpubTex(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
-		WritelpubTex(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
+		WritempubTex(PosX + 44, PosY + 50 + (Current * 15) - 1, Black, text);
+		WritempubTex(PosX + 45, PosY + 51 + (Current * 15) - 1, ColorText, text);
 
-		lWritelpubTex(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
-		lWritelpubTex(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
+		lWritempubTex(PosX + 236, PosY + 50 + (Current * 15) - 1, Black, opt[var]);
+		lWritempubTex(PosX + 237, PosY + 51 + (Current * 15) - 1, ColorText, opt[var]);
 		Current++;
 	}
 }
 
 //=====================================================================================================================
 
-LPD3DXSPRITE lpubSprite0, lpubSprite1, lpubSprite2, lpubSprite3, lpubSprite4, lpubSprite5, lpubSprite6, lpubSprite7, lpubSprite8, lpubSprite9, lpubSprite10, lpubSprite11, lpubSprite12, lpubSprite13 = NULL; //mensa
+LPD3DXSPRITE mpubSprite0, mpubSprite1, mpubSprite2, mpubSprite3, mpubSprite4, mpubSprite5, mpubSprite6, mpubSprite7, mpubSprite8, mpubSprite9, mpubSprite10, mpubSprite11, mpubSprite12, mpubSprite13 = NULL; //mensa
 LPD3DXSPRITE lpEsp0, lpEsp1, lpEsp2, lpEsp3, lpEsp4, lpEsp5, lpEsp6, lpEsp7, lpEsp8, lpEsp9, lpEsp10, lpEsp11, lpEsp12, lpEsp13, lpEsp14 = NULL; //esp
-LPDIRECT3DTEXTURE9 lpubSpriteImage0, lpubSpriteImage1, lpubSpriteImage2, lpubSpriteImage3, lpubSpriteImage4, lpubSpriteImage5, lpubSpriteImage6, lpubSpriteImage7, lpubSpriteImage8, lpubSpriteImage9, lpubSpriteImage10, lpubSpriteImage11, lpubSpriteImage12, lpubSpriteImage13, lpubSpriteImage14 = NULL; //mensa
+LPDIRECT3DTEXTURE9 mpubSpriteImage0, mpubSpriteImage1, mpubSpriteImage2, mpubSpriteImage3, mpubSpriteImage4, mpubSpriteImage5, mpubSpriteImage6, mpubSpriteImage7, mpubSpriteImage8, mpubSpriteImage9, mpubSpriteImage10, mpubSpriteImage11, mpubSpriteImage12, mpubSpriteImage13, mpubSpriteImage14 = NULL; //mensa
 LPDIRECT3DTEXTURE9 lpEspImage0, lpEspImage1, lpEspImage2, lpEspImage3, lpEspImage4, lpEspImage5, lpEspImage6, lpEspImage7, lpEspImage8, lpEspImage9, lpEspImage10, lpEspImage11, lpEspImage12, lpEspImage13, lpEspImage14, lpEspImage15 = NULL; //esp
-bool SpritelpubCreate_d1, SpritelpubCreate_d2 = false;
+bool SpritempubCreate_d1, SpritempubCreate_d2 = false;
 
-bool lpubaCreateSmallSprite(IDirect3DDevice9* pd3dDevice)
+bool mpubaCreateSmallSprite(IDirect3DDevice9* pd3dDevice)
 {
 	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\menu\\Menu0.png"), &lpubSpriteImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame1.png"), &lpubSpriteImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame2.png"), &lpubSpriteImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame3.png"), &lpubSpriteImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame4.png"), &lpubSpriteImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame5.png"), &lpubSpriteImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame6.png"), &lpubSpriteImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame7.png"), &lpubSpriteImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame8.png"), &lpubSpriteImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame9.png"), &lpubSpriteImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame10.png"), &lpubSpriteImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame11.png"), &lpubSpriteImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame12.png"), &lpubSpriteImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\greenwater\\Frame13.png"), &lpubSpriteImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\menu\\Menu0.png"), &mpubSpriteImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame1.png"), &mpubSpriteImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame2.png"), &mpubSpriteImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame3.png"), &mpubSpriteImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame4.png"), &mpubSpriteImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame5.png"), &mpubSpriteImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame6.png"), &mpubSpriteImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame7.png"), &mpubSpriteImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame8.png"), &mpubSpriteImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame9.png"), &mpubSpriteImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame10.png"), &mpubSpriteImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame11.png"), &mpubSpriteImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame12.png"), &mpubSpriteImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\greenwater\\Frame13.png"), &mpubSpriteImage13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
 		//bSpriteCreated1 = detected?
-		SpritelpubCreate_d1 = false;
+		SpritempubCreate_d1 = false;
 		return false;
 	}
 
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite0);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite1);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite2);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite3);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite4);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite5);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite6);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite7);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite8);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite9);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite10);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite11);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite12);
-	hr = D3DXCreateSprite(pd3dDevice, &lpubSprite13);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite0);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite1);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite2);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite3);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite4);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite5);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite6);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite7);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite8);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite9);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite10);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite11);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite12);
+	hr = D3DXCreateSprite(pd3dDevice, &mpubSprite13);
 
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite1 failed");
-		SpritelpubCreate_d1 = false;
+		SpritempubCreate_d1 = false;
 		return false;
 	}
 
-	SpritelpubCreate_d1 = true;
+	SpritempubCreate_d1 = true;
 	
 	return true;
 }
 
-bool lpubaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
+bool mpubaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
 {
 	
 	HRESULT hr;
 
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
-	hr = D3DXCreateTextureFromFile(pd3dDevice, GetlpubDirFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame0.png"), &lpEspImage0);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame1.png"), &lpEspImage1);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame2.png"), &lpEspImage2);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame3.png"), &lpEspImage3);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame4.png"), &lpEspImage4);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame5.png"), &lpEspImage5);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame6.png"), &lpEspImage6);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame7.png"), &lpEspImage7);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame8.png"), &lpEspImage8);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame9.png"), &lpEspImage9);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame10.png"), &lpEspImage10);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame11.png"), &lpEspImage11);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame12.png"), &lpEspImage12);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame13.png"), &lpEspImage13);
+	hr = D3DXCreateTextureFromFile(pd3dDevice, GetmpubDirFile("stuff\\animations\\blackbluecircle\\Frame14.png"), &lpEspImage14);
 	
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateTextureFromFile failed");
 		//bSpriteCreated2 = detected?
-		SpritelpubCreate_d2 = false;
+		SpritempubCreate_d2 = false;
 		return false;
 	}
 
@@ -800,11 +800,11 @@ bool lpubaCreateSmallSprite2(IDirect3DDevice9* pd3dDevice)
 	if (FAILED(hr))
 	{
 		//Log("D3DXCreateSprite2 failed");
-		SpritelpubCreate_d2 = false;
+		SpritempubCreate_d2 = false;
 		return false;
 	}
 
-	SpritelpubCreate_d2 = true;
+	SpritempubCreate_d2 = true;
 	
 	return true;
 }
@@ -823,35 +823,35 @@ void SafeRelease(COMObject*& pRes)
 
 // This will get called before Device::Clear(). If the device has been reset
 // then all the work surfaces will be created again.
-void PrelpubClear(IDirect3DDevice9* ddevice)
+void PrempubClear(IDirect3DDevice9* ddevice)
 {
-	if (!SpritelpubCreate_d1)
-		lpubaCreateSmallSprite(ddevice);
+	if (!SpritempubCreate_d1)
+		mpubaCreateSmallSprite(ddevice);
 
-	if (!SpritelpubCreate_d2)
-		lpubaCreateSmallSprite2(ddevice);
+	if (!SpritempubCreate_d2)
+		mpubaCreateSmallSprite2(ddevice);
 }
 
 // Delete work surfaces when device gets reset
 void DeleteSurfaces()
 {
-	if (lpubSprite0 != NULL)
+	if (mpubSprite0 != NULL)
 	{
-		//Log("SafeRelease(lpubSprite)");
-		SafeRelease(lpubSprite0);
-		SafeRelease(lpubSprite1);
-		SafeRelease(lpubSprite2);
-		SafeRelease(lpubSprite3);
-		SafeRelease(lpubSprite4);
-		SafeRelease(lpubSprite5);
-		SafeRelease(lpubSprite6);
-		SafeRelease(lpubSprite7);
-		SafeRelease(lpubSprite8);
-		SafeRelease(lpubSprite9);
-		SafeRelease(lpubSprite10);
-		SafeRelease(lpubSprite11);
-		SafeRelease(lpubSprite12);
-		SafeRelease(lpubSprite13);
+		//Log("SafeRelease(mpubSprite)");
+		SafeRelease(mpubSprite0);
+		SafeRelease(mpubSprite1);
+		SafeRelease(mpubSprite2);
+		SafeRelease(mpubSprite3);
+		SafeRelease(mpubSprite4);
+		SafeRelease(mpubSprite5);
+		SafeRelease(mpubSprite6);
+		SafeRelease(mpubSprite7);
+		SafeRelease(mpubSprite8);
+		SafeRelease(mpubSprite9);
+		SafeRelease(mpubSprite10);
+		SafeRelease(mpubSprite11);
+		SafeRelease(mpubSprite12);
+		SafeRelease(mpubSprite13);
 	}
 
 	if (lpEsp0 != NULL)
@@ -874,21 +874,21 @@ void DeleteSurfaces()
 		SafeRelease(lpEsp14);
 	}
 
-	SpritelpubCreate_d1 = false;
-	SpritelpubCreate_d2 = false;
+	SpritempubCreate_d1 = false;
+	SpritempubCreate_d2 = false;
 }
 
 // This gets called right before the frame is presented on-screen - Device::Present().
 // First, create the display text, FPS and info message, on-screen. Then then call
 // CopySurfaceToTextureBuffer() to downsample the image and copy to shared memory
-void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
+void PrempubPresent(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (SpritelpubCreate_d1)
+	if (SpritempubCreate_d1)
 	{
-		if (lpubSprite0 != NULL)
+		if (mpubSprite0 != NULL)
 		{
 			D3DXVECTOR3 position;
 			position.x = (float)cx;
@@ -897,9 +897,9 @@ void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
 
 			textOffsetLeft = (int)position.x; //for later to offset text from image
 
-			//lpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-			//lpubSprite1->Draw(lpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-			//lpubSprite1->End();
+			//mpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+			//mpubSprite1->Draw(mpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+			//mpubSprite1->End();
 
 			//position.x = 20.0f; //79.0f;
 			//position.y = 20.0f;
@@ -913,10 +913,10 @@ void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
 			D3DXMatrixMultiply(&transMatrix0, &scaleMatrix0, &transMatrix0);
 
 			//draw mensa background pic
-			lpubSprite0->SetTransform(&transMatrix0);
-			lpubSprite0->Begin(D3DXSPRITE_ALPHABLEND);
-			lpubSprite0->Draw(lpubSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
-			lpubSprite0->End();
+			mpubSprite0->SetTransform(&transMatrix0);
+			mpubSprite0->Begin(D3DXSPRITE_ALPHABLEND);
+			mpubSprite0->Draw(mpubSpriteImage0, NULL, NULL, &position, 0xFFFFFFFF);
+			mpubSprite0->End();
 
 			//anim timer
 			dwTime0 = GetTickCount() / 60;//50 speed
@@ -940,106 +940,106 @@ void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
 			//draw animation foreground pics
 			if (dwTime0 - dwStartTime0 == 0)
 			{
-				lpubSprite1->SetTransform(&transMatrix);
-				lpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite1->Draw(lpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite1->End();
+				mpubSprite1->SetTransform(&transMatrix);
+				mpubSprite1->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite1->Draw(mpubSpriteImage1, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite1->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 1)
 			{
-				lpubSprite2->SetTransform(&transMatrix);
-				lpubSprite2->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite2->Draw(lpubSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite2->End();
+				mpubSprite2->SetTransform(&transMatrix);
+				mpubSprite2->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite2->Draw(mpubSpriteImage2, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite2->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 2)
 			{
-				lpubSprite3->SetTransform(&transMatrix);
-				lpubSprite3->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite3->Draw(lpubSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite3->End();
+				mpubSprite3->SetTransform(&transMatrix);
+				mpubSprite3->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite3->Draw(mpubSpriteImage3, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite3->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 3)
 			{
-				lpubSprite4->SetTransform(&transMatrix);
-				lpubSprite4->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite4->Draw(lpubSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite4->End();
+				mpubSprite4->SetTransform(&transMatrix);
+				mpubSprite4->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite4->Draw(mpubSpriteImage4, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite4->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 4)
 			{
-				lpubSprite5->SetTransform(&transMatrix);
-				lpubSprite5->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite5->Draw(lpubSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite5->End();
+				mpubSprite5->SetTransform(&transMatrix);
+				mpubSprite5->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite5->Draw(mpubSpriteImage5, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite5->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 5)
 			{
-				lpubSprite6->SetTransform(&transMatrix);
-				lpubSprite6->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite6->Draw(lpubSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite6->End();
+				mpubSprite6->SetTransform(&transMatrix);
+				mpubSprite6->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite6->Draw(mpubSpriteImage6, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite6->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 6)
 			{
-				lpubSprite7->SetTransform(&transMatrix);
-				lpubSprite7->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite7->Draw(lpubSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite7->End();
+				mpubSprite7->SetTransform(&transMatrix);
+				mpubSprite7->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite7->Draw(mpubSpriteImage7, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite7->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 7)
 			{
-				lpubSprite8->SetTransform(&transMatrix);
-				lpubSprite8->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite8->Draw(lpubSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite8->End();
+				mpubSprite8->SetTransform(&transMatrix);
+				mpubSprite8->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite8->Draw(mpubSpriteImage8, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite8->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 8)
 			{
-				lpubSprite9->SetTransform(&transMatrix);
-				lpubSprite9->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite9->Draw(lpubSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite9->End();
+				mpubSprite9->SetTransform(&transMatrix);
+				mpubSprite9->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite9->Draw(mpubSpriteImage9, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite9->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 9)
 			{
-				lpubSprite10->SetTransform(&transMatrix);
-				lpubSprite10->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite10->Draw(lpubSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite10->End();
+				mpubSprite10->SetTransform(&transMatrix);
+				mpubSprite10->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite10->Draw(mpubSpriteImage10, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite10->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 10)
 			{
-				lpubSprite11->SetTransform(&transMatrix);
-				lpubSprite11->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite11->Draw(lpubSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite11->End();
+				mpubSprite11->SetTransform(&transMatrix);
+				mpubSprite11->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite11->Draw(mpubSpriteImage11, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite11->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 11)
 			{
-				lpubSprite12->SetTransform(&transMatrix);
-				lpubSprite12->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite12->Draw(lpubSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite12->End();
+				mpubSprite12->SetTransform(&transMatrix);
+				mpubSprite12->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite12->Draw(mpubSpriteImage12, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite12->End();
 			}
 
 			if (dwTime0 - dwStartTime0 == 12)
 			{
-				lpubSprite13->SetTransform(&transMatrix);
-				lpubSprite13->Begin(D3DXSPRITE_ALPHABLEND);
-				lpubSprite13->Draw(lpubSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
-				lpubSprite13->End();
+				mpubSprite13->SetTransform(&transMatrix);
+				mpubSprite13->Begin(D3DXSPRITE_ALPHABLEND);
+				mpubSprite13->Draw(mpubSpriteImage13, NULL, NULL, &position, 0xFFFFFFFF);
+				mpubSprite13->End();
 			}
 		}
 	}
@@ -1047,12 +1047,12 @@ void PrelpubPresent(IDirect3DDevice9* Device, int cx, int cy)
 	// draw text
 }
 
-void PrelpubPresent2(IDirect3DDevice9* Device, int cx, int cy)
+void PrempubPresent2(IDirect3DDevice9* Device, int cx, int cy)
 {
 	int textOffsetLeft;
 
 	//draw sprite
-	if (SpritelpubCreate_d2)
+	if (SpritempubCreate_d2)
 	{
 		if (lpEsp0 != NULL)
 		{
@@ -1210,21 +1210,21 @@ char *opt_Aimfov[] = { "[0]", "[10%]", "[20%]", "[30%]", "[40%]", "[50%]", "[60%
 char *opt_Aimhuman[] = { "[Off]", "[On sens 1]", "[On sens 2]", "[On sens 3]", "[On sens 4]", "[On sens 5]", "[On sens 6]", "[On sens 7]", "[On sens 8]", "[On sens 9]", "[On sens 10]" };
 char *opt_autoshoot[] = { "[OFF]", "[OnKeyDown]" };
 
-void DrawlpubMenu(LPDIRECT3DDEVICE9 pDevice)
+void DrawmpubMenu(LPDIRECT3DDEVICE9 pDevice)
 {
 	if (GetAsyncKeyState(VK_INSERT) & 1)
 	{
 		Show = !Show;
 
 		//save settings
-		SavelpubCfg();
+		SavempubCfg();
 
-		//Save("wallhack", "wallhack", wallhack, GetlpubDirFile("lpubaconfig.ini"));
+		//Save("wallhack", "wallhack", wallhack, GetmpubDirFile("mpubaconfig.ini"));
 
-		PlaySoundA(GetlpubDirFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
+		PlaySoundA(GetmpubDirFile("stuff\\sounds\\menu.wav"), 0, SND_FILENAME | SND_ASYNC | SND_NOSTOP | SND_NODEFAULT);
 	}
 
-	if (Show && lpubFont)
+	if (Show && mpubFont)
 	{
 		if (GetAsyncKeyState(VK_UP) & 1)
 			mensaSelect--;
@@ -1237,22 +1237,22 @@ void DrawlpubMenu(LPDIRECT3DDEVICE9 pDevice)
 		DrawBox(pDevice, 71, 63, 200, 1, DarkOutline);
 		DrawBox(pDevice, 71, 86, 200, Current * 15, DarkOutline);
 		//draw mensa pic
-		PrelpubPresent(pDevice, 20, 20);
-		//cWritelpubTex(172, 71, White, "Paladins D3D");
+		PrempubPresent(pDevice, 20, 20);
+		//cWritempubTex(172, 71, White, "Paladins D3D");
 
 		Current = 1;
 		//Categor(pDevice, " [D3D]");
-		AddlpubIte(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
-		AddlpubIte(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
-		AddlpubIte(pDevice, " Esp", esp, opt_OnEsp, 2);
-		AddlpubIte(pDevice, " Aimbot", aimbot, opt_Teams, 3);
-		AddlpubIte(pDevice, " Aimkey", aimkey, opt_Keys, 8);
-		AddlpubIte(pDevice, " Aimsensitivity", aimsens, opt_Sensitivity, 19);
-		AddlpubIte(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
-		AddlpubIte(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
-		AddlpubIte(pDevice, " AimHuman", usehumanaim, opt_Aimhuman, 10);
-		AddlpubIte(pDevice, " Autoshoot", autoshoot, opt_autoshoot, 1);
-		AddlpubIte(pDevice, " Killsounds", killsounds, opt_OnOff, 1);
+		AddmpubIte(pDevice, " Wallhack", wallhack, opt_WhChams, 3);
+		AddmpubIte(pDevice, " Occlusion", occlusion, opt_OnOff, 1);
+		AddmpubIte(pDevice, " Esp", esp, opt_OnEsp, 2);
+		AddmpubIte(pDevice, " Aimbot", aimbot, opt_Teams, 3);
+		AddmpubIte(pDevice, " Aimkey", aimkey, opt_Keys, 8);
+		AddmpubIte(pDevice, " Aimsensitivity", aimsens, opt_Sensitivity, 19);
+		AddmpubIte(pDevice, " Aimfov", aimfov, opt_Aimfov, 9);
+		AddmpubIte(pDevice, " Aimheight", aimheight, opt_Aimheight, 10);
+		AddmpubIte(pDevice, " AimHuman", useaimhuman, opt_Aimhuman, 10);
+		AddmpubIte(pDevice, " Autoshoot", autoshoot, opt_autoshoot, 1);
+		AddmpubIte(pDevice, " Killsounds", killsounds, opt_OnOff, 1);
 
 		if (mensaSelect >= Current)
 			mensaSelect = 1;
