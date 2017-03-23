@@ -1,5 +1,5 @@
 /*
-* Paladins D3D Hack Source V1.7
+* Paladins D3D Hack Source V1.7 (a few things are detected by eac in this src)
 
 How to compile:
 - download and install "Microsoft Visual Studio Express 2015 for Windows DESKTOP" https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx
@@ -183,32 +183,32 @@ HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITI
 
 	//aimbot 1
 	if(
-		(aimbot == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
-		(aimbot == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
+		(aimbot == 1 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84)|| //orange far range
+		(aimbot == 1 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)|| //orange mid range
 		(aimbot == 1 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84)	//red near range
 		)
 		HPBarAim(pDevice, 1);
 
 	//aimbot 2
-	if ((aimbot == 2 && Stride == 8 && NumVertices == 8 && primCount == 10) && (qlCRC == 0xd81bd7af || qlCRC == 0xcb415efe)) //team red/orange, enemy team
+	if ((aimbot == 2 && dWidth == 12 && dHeight == 8 && Stride == 8 && NumVertices == 8 && primCount == 10) && (qlCRC == 0xd81bd7af || qlCRC == 0x9df78443)) //team red/orange, enemy team
 		TBarAim(pDevice, 1);
 
 	//compatibility
-	if (aimbot == 3 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
+	if (aimbot == 3 && dWidth == 12 && dHeight == 8 && Stride == 8 && NumVertices == 8 && primCount == 10)//all teams
 		TBarAim(pDevice, 1);
 
 	//pic esp
 	if (
-		(esp == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
-		(esp == 1 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
+		(esp == 1 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
+		(esp == 1 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
 		(esp == 1 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
 		)
 		HPBarEsp(pDevice, 1);
 
 	//text esp
 	if (
-		(esp == 2 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
-		(esp == 2 && qlCRC == 0xcb415efe && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
+		(esp == 2 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 68 && primCount == 84) || //orange far range
+		(esp == 2 && qlCRC == 0x9df78443 && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) || //orange mid range
 		(esp == 2 && qlCRC == 0xd81bd7af && dWidth == 12 && dHeight == 8 && Stride == 12 && NumVertices == 66 && primCount == 84) //red near range
 		)
 		HPBarEsp(pDevice, 2);
