@@ -133,8 +133,8 @@ HRESULT APIENTRY SetVertexShaderConstantF_hook(LPDIRECT3DDEVICE9 pDevice, UINT S
 HRESULT APIENTRY DrawIndexedPrimitive_hook(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE Type, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 {
 	//more fps but could cause problems with wallhack at lower setting
-	if (wall__hack == 0 && mStage_ == 1)
-		return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+	//if (wall__hack == 0 && mStage_ == 1)
+		//return DrawIndexedPrimitive_orig(pDevice, Type, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
 	//wallhack
 	if (wall__hack > 0 && decl_->Type == 5 && num__elements == 11) //models
